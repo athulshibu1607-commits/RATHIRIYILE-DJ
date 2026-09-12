@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNORESCAN - Useless Intelligence™ Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/day-night.css') }}">
+</head>
+<body class="day-mode">
+    <div class="app-container">
+        <!-- Header Navbar -->
+        <header class="navbar">
+            <div class="logo-group">
+                <div class="logo-icon"><i class="fa-solid fa-wave-square"></i></div>
+                <div class="logo-text">
+                    <span class="brand-name">SNORE<span class="highlight">SCAN</span></span>
+                    <span class="badge-useless">Useless Intelligence™ Hub</span>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="/"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="/monitoring"><i class="fa-solid fa-moon"></i> Night Monitoring</a>
+                <a href="/useless" class="active"><i class="fa-solid fa-fire text-amber"></i> Useless Hub</a>
+                <a href="/analysis"><i class="fa-solid fa-chart-line"></i> Analysis</a>
+                <a href="/history"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+                <a href="/compare"><i class="fa-solid fa-code-compare"></i> Compare</a>
+                <a href="/status"><i class="fa-solid fa-heart-pulse"></i> Status</a>
+                <a href="/demo" class="badge-demo-nav"><i class="fa-solid fa-wand-magic-sparkles"></i> Demo Mode</a>
+            </nav>
+        </header>
+
+        <!-- Medical Disclaimer -->
+        <div class="medical-disclaimer-alert">
+            <div class="disclaimer-icon"><i class="fa-solid fa-masks-theater"></i></div>
+            <div class="disclaimer-text">
+                <strong>100% USELESS ENTERTAINMENT HUB:</strong> All metrics, weather predictions, boss battles, and roommate damage reports on this page are fictional, entertainment-focused, and completely non-medical.
+            </div>
+        </div>
+
+        <main class="page-content">
+            <!-- Hero Title -->
+            <div style="text-align: center; margin-bottom: 30px;">
+                <span class="badge-useless" style="font-size: 14px; padding: 6px 16px; background: rgba(245,158,11,0.2); color: #fbbf24; border-color: #fbbf24; margin-bottom: 12px; display: inline-block;">
+                    🔥 MAXIMUM USELESSNESS ENGAGED
+                </span>
+                <h1 style="font-family: var(--font-heading); font-size: 36px; font-weight: 900; color: var(--text-main); margin: 0;">
+                    SNORESCAN <span class="highlight">USELESS INTELLIGENCE™ HUB</span>
+                </h1>
+                <p style="color: var(--text-secondary); font-size: 16px; margin-top: 6px; max-width: 700px; margin-left: auto; margin-right: auto;">
+                    Because ordinary sleep monitoring wasn't ridiculous enough. Welcome to the official repository of useless statistics.
+                </p>
+            </div>
+
+            <!-- Top Row: Active Streak & World Records Notice -->
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 25px;">
+                <!-- Active Streak Card -->
+                <div class="card" style="background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(244,63,94,0.15)); border: 1px solid var(--accent-amber); text-align: center; padding: 24px;">
+                    <div style="font-size: 12px; font-weight: 700; color: var(--accent-amber); text-transform: uppercase; letter-spacing: 1px;">SNORE STREAK TRACKER</div>
+                    <div style="font-family: var(--font-heading); font-size: 40px; font-weight: 900; color: var(--text-main); margin-top: 10px;">
+                        {{ streak.current_streak_str or streak.status }}
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">
+                        Longest Recorded Streak: <strong class="text-amber">{{ streak.longest_streak }} sessions</strong>
+                    </div>
+                </div>
+
+                <!-- World Records Overview Card -->
+                <div class="card" style="border: 1px solid var(--accent-cyan);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <h3><i class="fa-solid fa-earth-americas text-cyan"></i> 🌎 SNORESCAN WORLD RECORDS</h3>
+                        <span style="font-size: 11px; color: var(--text-muted);">*Installation Records Only</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                        {% if world_records and world_records.records %}
+                            {% for rec in world_records.records %}
+                            <div style="background: rgba(11,15,25,0.6); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">{{ rec.category }}</div>
+                                <div style="font-family: var(--font-heading); font-size: 18px; font-weight: 800; color: var(--accent-cyan); margin-top: 2px;">
+                                    {{ rec.value }}
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                                    Session #{{ rec.session_id }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div style="grid-column: 1 / -1; color: var(--text-muted); font-size: 13px;">No world records recorded yet. Complete monitoring sessions to populate history!</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- PHASE 18: HALL OF SHAME LEADERBOARD -->
+            {% if hall_of_shame %}
+            <div class="card" style="border: 1px solid #ef4444; margin-bottom: 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3><i class="fa-solid fa-fire text-rose"></i> 🏆 SNORESCAN HALL OF SHAME</h3>
+                    <span style="font-size: 12px; color: var(--text-muted);">Calculated from real SQLite session records</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; text-align: center;">
+                    <div style="background: rgba(239,68,68,0.08); padding: 16px; border-radius: 12px; border: 1px solid rgba(239,68,68,0.3);">
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">🔥 MOST SNORES</div>
+                        <div style="font-size: 24px; font-weight: 900; color: #ef4444; margin-top: 4px;">
+                            {{ hall_of_shame.most_snores.total_snores if hall_of_shame.most_snores else 0 }} Snores
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                            Session #{{ hall_of_shame.most_snores.id if hall_of_shame.most_snores else '--' }}
+                        </div>
+                    </div>
+                    <div style="background: rgba(245,158,11,0.08); padding: 16px; border-radius: 12px; border: 1px solid rgba(245,158,11,0.3);">
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">💥 LOUDEST SESSION</div>
+                        <div style="font-size: 24px; font-weight: 900; color: #f59e0b; margin-top: 4px;">
+                            {{ "%.1f"|format(hall_of_shame.loudest.max_intensity_db) if hall_of_shame.loudest else -80 }} dB
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                            Session #{{ hall_of_shame.loudest.id if hall_of_shame.loudest else '--' }}
+                        </div>
+                    </div>
+                    <div style="background: rgba(168,85,247,0.08); padding: 16px; border-radius: 12px; border: 1px solid rgba(168,85,247,0.3);">
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">⏱️ LONGEST SNORE TIME</div>
+                        <div style="font-size: 24px; font-weight: 900; color: #a855f7; margin-top: 4px;">
+                            {{ "%.1f"|format(hall_of_shame.longest.total_snore_duration) if hall_of_shame.longest else 0 }} s
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                            Session #{{ hall_of_shame.longest.id if hall_of_shame.longest else '--' }}
+                        </div>
+                    </div>
+                    <div style="background: rgba(6,182,212,0.08); padding: 16px; border-radius: 12px; border: 1px solid rgba(6,182,212,0.3);">
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">🌪️ MOST CHAOTIC</div>
+                        <div style="font-size: 24px; font-weight: 900; color: #06b6d4; margin-top: 4px;">
+                            {{ hall_of_shame.most_chaotic.chaos if hall_of_shame.most_chaotic else 0 }}% Chaos
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                            Session #{{ hall_of_shame.most_chaotic.id if hall_of_shame.most_chaotic else '--' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Snore Personalities Showcase Grid -->
+            <div class="card" style="margin-bottom: 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3><i class="fa-solid fa-masks-theater text-violet"></i> 🎭 SNORE PERSONALITY 2.0 CATALOG</h3>
+                    <span style="font-size: 12px; color: var(--text-secondary);">100% Deterministic Classification Engine</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                    <div style="background: rgba(11,15,25,0.6); padding: 16px; border-radius: 10px; border: 1px solid rgba(168,85,247,0.3);">
+                        <h4 style="color: #c084fc; margin: 0 0 6px 0;">✈️ JET ENGINE MODE</h4>
+                        <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0;">Extremely high intensity (> -15 dBFS) with elevated dominant frequencies (> 300 Hz).</p>
+                    </div>
+                    <div style="background: rgba(11,15,25,0.6); padding: 16px; border-radius: 10px; border: 1px solid rgba(244,63,94,0.3);">
+                        <h4 style="color: #f43f5e; margin: 0 0 6px 0;">🚨 NUCLEAR ALARM CLOCK</h4>
+                        <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0;">High event frequency (> 10 ev/min) with peak loudness capable of waking neighbors.</p>
+                    </div>
+                    <div style="background: rgba(11,15,25,0.6); padding: 16px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.3);">
+                        <h4 style="color: #fbbf24; margin: 0 0 6px 0;">👹 BOSS FIGHT MODE</h4>
+                        <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0;">Snoring percentage > 25% with extended continuous rumbles exceeding 3 seconds.</p>
+                    </div>
+                    <div style="background: rgba(11,15,25,0.6); padding: 16px; border-radius: 10px; border: 1px solid rgba(6,182,212,0.3);">
+                        <h4 style="color: #22d3ee; margin: 0 0 6px 0;">🚜 TRACTOR MODE</h4>
+                        <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0;">Resembles a vintage tractor attempting to start at 3 AM. Classic low frequency chug.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hall of Fame Card -->
+            <div class="card" style="border: 1px solid var(--accent-emerald);">
+                <h3><i class="fa-solid fa-trophy text-emerald"></i> 🏆 SNORESCAN HALL OF FAME</h3>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 16px; text-align: center;">
+                    <div style="background: rgba(16,185,129,0.1); padding: 18px; border-radius: 10px; border: 1px solid rgba(16,185,129,0.3);">
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">LOUDEST EVENT EVER</div>
+                        <div style="font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: var(--accent-emerald); margin-top: 4px;">
+                            {{ hall_of_fame.loudest_event.value }}
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Session #{{ hall_of_fame.loudest_event.session_id }}</div>
+                    </div>
+                    <div style="background: rgba(6,182,212,0.1); padding: 18px; border-radius: 10px; border: 1px solid rgba(6,182,212,0.3);">
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">LONGEST EVENT EVER</div>
+                        <div style="font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: var(--accent-cyan); margin-top: 4px;">
+                            {{ hall_of_fame.longest_event.value }}
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Session #{{ hall_of_fame.longest_event.session_id }}</div>
+                    </div>
+                    <div style="background: rgba(245,158,11,0.1); padding: 18px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.3);">
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">MOST EVENTS IN ONE SESSION</div>
+                        <div style="font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: var(--accent-amber); margin-top: 4px;">
+                            {{ hall_of_fame.most_events_session.value }}
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Session #{{ hall_of_fame.most_events_session.session_id }}</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>SNORESCAN &copy; 2026 - Useless Hackathon Project. Non-medical entertainment application.</p>
+        </footer>
+    </div>
+    <script src="{{ url_for('static', filename='js/day-night.js') }}"></script>
+</body>
+</html>
+

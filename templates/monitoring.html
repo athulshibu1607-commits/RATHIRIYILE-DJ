@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNORESCAN - Live Monitoring Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/day-night.css') }}">
+</head>
+<body class="night-mode">
+    <div class="app-container">
+        <!-- Navbar Header -->
+        <header class="navbar">
+            <div class="logo-group">
+                <div class="logo-icon"><i class="fa-solid fa-wave-square"></i></div>
+                <div class="logo-text">
+                    <span class="brand-name">SNORE<span class="highlight">SCAN</span></span>
+                    <span class="badge-useless">🌙 Night Control Center</span>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="/"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="/monitoring" class="active"><i class="fa-solid fa-moon"></i> Night Monitoring</a>
+                <a href="/analysis"><i class="fa-solid fa-chart-line"></i> Analysis</a>
+                <a href="/history"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+                <a href="/compare"><i class="fa-solid fa-code-compare"></i> Compare</a>
+                <a href="/status"><i class="fa-solid fa-heart-pulse"></i> Status</a>
+                <a href="/demo" class="badge-demo-nav"><i class="fa-solid fa-wand-magic-sparkles"></i> Demo Mode</a>
+            </nav>
+        </header>
+
+        {% if is_demo %}
+        <!-- Demo Mode Banner -->
+        <div class="card" style="background: rgba(245,158,11,0.15); border: 2px solid var(--accent-amber); margin-bottom: 20px; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px; color: var(--accent-amber); font-weight: 700; font-size: 16px;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px;"></i>
+                <span>⚠️ DEMO MODE — FICTIONAL DATA (SQLite Database Isolated)</span>
+            </div>
+            <a href="/monitoring" class="btn btn-secondary" style="border-color: var(--accent-amber); color: #fff; text-decoration: none;">
+                <i class="fa-solid fa-right-from-bracket"></i> EXIT DEMO
+            </a>
+        </div>
+        {% else %}
+        <!-- Medical Disclaimer Banner -->
+        <div class="medical-disclaimer-alert">
+            <div class="disclaimer-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="disclaimer-text">
+                <strong>NON-MEDICAL DEVICE NOTICE:</strong> SNORESCAN detects and analyzes acoustic patterns for entertainment/screening purposes only. It is NOT a medical diagnosis.
+            </div>
+        </div>
+        {% endif %}
+
+        <main class="page-content">
+            <!-- Phase 7 Dashboard Title & Status Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 24px;">
+                <div>
+                    <h1 style="font-family: var(--font-heading); font-size: 28px; font-weight: 800; color: #fff; margin: 0;">
+                        🌙 NIGHT <span class="highlight">LIVE MONITORING</span>
+                    </h1>
+
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">
+                        The Night is Listening... Real-time microphone capture & Boss Power generator
+                    </p>
+                </div>
+                <div>
+                    <span class="live-status-badge live-status-ready" id="dashStatusBadge">
+                        <span class="pulse-dot" id="dashStatusDot"></span>
+                        <span id="dashStatusText">READY</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Hardware Microphone Status Bar -->
+            <div class="card mic-status-bar" style="margin-bottom: 20px;" id="micStatusBar">
+                <span class="status-badge badge-idle" id="micBadge">
+                    <i class="fa-solid fa-microphone"></i> Hardware Mic: Initializing...
+                </span>
+            </div>
+
+            <!-- Live Error Card (Hidden by default) -->
+            <div class="card snore-alert-card hidden" id="micErrorCard" style="border-color: var(--accent-rose); background: rgba(244,63,94,0.15); margin-bottom: 20px;">
+                <div style="color: var(--accent-rose); font-weight: 600; display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-circle-exclamation" style="font-size: 22px;"></i>
+                        <span id="micErrorMessage">🎙️ SNORESCAN couldn't access your microphone. Please check your microphone permissions and try again.</span>
+                    </div>
+                    <button class="btn btn-secondary" onclick="startMonitoringSession()" style="border-color: var(--accent-rose); color: var(--accent-rose); font-size: 12px; padding: 6px 12px;">
+                        <i class="fa-solid fa-rotate-right"></i> Retry Microphone
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Live Dashboard Top Row -->
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 24px;">
+                <!-- Column 1: Controls, Timer & Session Info -->
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Timer & Control Card -->
+                    <div class="card" style="text-align: center; padding: 24px;">
+                        <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+                            Session Duration
+                        </div>
+                        <div class="live-timer-display" id="dashTimer">00:00:00</div>
+
+                        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                            <button class="btn btn-primary" id="monStartBtn" onclick="startMonitoringSession()" style="font-size: 16px; padding: 14px; width: 100%;">
+                                <i class="fa-solid fa-play"></i> START MONITORING
+                            </button>
+                            <button class="btn btn-danger" id="monStopBtn" onclick="stopMonitoringSession()" disabled style="font-size: 16px; padding: 14px; width: 100%;">
+                                <i class="fa-solid fa-stop"></i> STOP MONITORING
+                            </button>
+
+                        </div>
+                    </div>
+
+                    <!-- Session Information Card -->
+                    <div class="session-info-card">
+                        <h3 style="font-size: 14px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; margin-bottom: 6px;">
+                            <i class="fa-solid fa-circle-info text-cyan"></i> Session Info
+                        </h3>
+                        <div class="session-info-row">
+                            <span>Session ID:</span>
+                            <strong id="infoSessionId">#--</strong>
+                        </div>
+                        <div class="session-info-row">
+                            <span>Start Time:</span>
+                            <span id="infoStartTime">--:--:--</span>
+                        </div>
+                        <div class="session-info-row">
+                            <span>Sampling Rate:</span>
+                            <span>44,100 Hz PCM</span>
+                        </div>
+                        <div class="session-info-row">
+                            <span>Boss Power HUD:</span>
+                            <strong id="bossPowerHUD" style="color: #ef4444;">0 PTS</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: 4 Real-time Metric Cards -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                    <!-- Card 1: Snore Event Count -->
+                    <div class="metric-card metric-violet">
+                        <div class="metric-icon"><i class="fa-solid fa-bell"></i></div>
+                        <div class="metric-value" id="dashEventCount">0</div>
+                        <div class="metric-title">Total Snore Events</div>
+                        <div class="metric-subtitle" id="dashSnoreRate">0.0 events/min</div>
+                    </div>
+
+                    <!-- Card 2: Snoring Duration % -->
+                    <div class="metric-card metric-cyan">
+                        <div class="metric-icon"><i class="fa-solid fa-percent"></i></div>
+                        <div class="metric-value" id="dashSnorePct">0.0%</div>
+                        <div class="metric-title">Snoring Percentage</div>
+                        <div class="metric-subtitle" id="dashSnoreDuration">0.0 s snoring time</div>
+                    </div>
+
+                    <!-- Card 3: Acoustic Intensity & Boss Power -->
+                    <div class="metric-card metric-emerald">
+                        <div class="metric-icon"><i class="fa-solid fa-skull"></i></div>
+                        <div class="metric-value" id="dashBossPowerCard">0</div>
+                        <div class="metric-title">Fictional Boss Power</div>
+                        <div class="metric-subtitle" id="dashCurrentDb">Live: -80.0 dBFS</div>
+                    </div>
+
+                    <!-- Card 4: Dominant Frequency -->
+                    <div class="metric-card metric-amber">
+                        <div class="metric-icon"><i class="fa-solid fa-wave-square"></i></div>
+                        <div class="metric-value" id="dashLatestFreq">0 Hz</div>
+                        <div class="metric-title">Dominant Frequency</div>
+                        <div class="metric-subtitle" id="dashMinMaxFreq">Range: 0 - 0 Hz</div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Waveform & Activity Graph Row -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+                <!-- Real-time Oscilloscope Waveform Canvas -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="font-size: 16px; margin: 0; font-family: var(--font-heading); color: #fff;">
+                            <i class="fa-solid fa-chart-line text-cyan"></i> Live Audio Waveform (PCM)
+                        </h3>
+                        <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Real-Time Oscilloscope</span>
+                    </div>
+                    <canvas id="liveWaveformCanvas" class="live-canvas"></canvas>
+                </div>
+
+                <!-- Continuous Intensity Graph Canvas -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="font-size: 16px; margin: 0; font-family: var(--font-heading); color: #fff;">
+                            <i class="fa-solid fa-chart-area text-violet"></i> Continuous Acoustic Intensity (dBFS)
+                        </h3>
+                        <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Threshold: -35.0 dBFS</span>
+                    </div>
+                    <canvas id="liveIntensityCanvas" class="live-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Phase 7 Detected Snore Event Cards Grid -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 18px; margin: 0; font-family: var(--font-heading); color: #fff;">
+                        <i class="fa-solid fa-list-check text-emerald"></i> Real-Time Detected Snore Events
+                    </h3>
+                    <span style="font-size: 12px; color: var(--text-secondary);" id="eventCountBadge">0 events recorded</span>
+                </div>
+
+                <div class="live-detections-grid" id="liveDetectionsGrid">
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--text-muted); font-size: 14px;">
+                        <i class="fa-solid fa-microphone-lines" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                        Continuous microphone capture ready. Press START MONITORING to record...
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>SNORESCAN &copy; 2026 - Useless Hackathon Project. Non-medical entertainment application.</p>
+        </footer>
+    </div>
+
+    <!-- Script tags -->
+    <script>
+        window.IS_DEMO_MODE = {{ 'true' if is_demo else 'false' }};
+    </script>
+    <script src="{{ url_for('static', filename='js/day-night.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/recorder.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/monitoring.js') }}"></script>
+</body>
+</html>
+

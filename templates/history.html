@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session History - SNORESCAN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <header class="navbar">
+            <div class="logo-group">
+                <div class="logo-icon"><i class="fa-solid fa-wave-square"></i></div>
+                <div class="logo-text">
+                    <span class="brand-name">SNORE<span class="highlight">SCAN</span></span>
+                    <span class="badge-useless">Hackathon Edition</span>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="/"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="/monitoring"><i class="fa-solid fa-microphone-lines"></i> Monitoring</a>
+                <a href="/analysis"><i class="fa-solid fa-chart-line"></i> Analysis</a>
+                <a href="/history" class="active"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+                <a href="/compare"><i class="fa-solid fa-code-compare"></i> Compare</a>
+                <a href="/status"><i class="fa-solid fa-heart-pulse"></i> Status</a>
+                <a href="/demo" class="badge-demo-nav"><i class="fa-solid fa-wand-magic-sparkles"></i> Demo Mode</a>
+            </nav>
+        </header>
+
+        <div class="medical-disclaimer-alert">
+            <div class="disclaimer-icon"><i class="fa-solid fa-database"></i></div>
+            <div class="disclaimer-text">
+                <strong>HISTORICAL DATA NOTICE:</strong> All sessions stored locally in SQLite database. Records represent personal acoustic observations and are not clinical medical records.
+            </div>
+        </div>
+
+        <main class="page-content">
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h2><i class="fa-solid fa-clock-rotate-left text-emerald"></i> Monitoring Session History</h2>
+                    <p>Review past continuous monitoring logs, session reports, compare sessions, and export data.</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="submitComparison()">
+                        <i class="fa-solid fa-code-compare"></i> COMPARE SELECTED SESSIONS
+                    </button>
+                </div>
+            </div>
+
+            <div id="selectionAlert" class="card hidden" style="background: rgba(244,63,94,0.15); border: 1px solid rgba(244,63,94,0.4); color: var(--accent-rose); padding: 12px 18px; margin-bottom: 20px; border-radius: 8px;">
+                <i class="fa-solid fa-circle-exclamation"></i> <span id="selectionAlertText">Select at least 2 sessions to compare.</span>
+            </div>
+
+            <div class="card history-table-card">
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px; text-align: center;">
+                                    <input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this)" style="cursor: pointer;">
+                                </th>
+                                <th>ID</th>
+                                <th>Date & Start Time</th>
+                                <th>Duration</th>
+                                <th>Events</th>
+                                <th>Snore Dur</th>
+                                <th>Snoring %</th>
+                                <th>Avg Intensity</th>
+                                <th>Avg Freq</th>
+                                <th>Events/min</th>
+                                <th>Avg Event Dur</th>
+                                <th>Longest Event</th>
+                                <th>Personality</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            {% if sessions and sessions|length > 0 %}
+                                {% for s in sessions %}
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="session-cb" value="{{ s.id }}" style="cursor: pointer;">
+                                    </td>
+                                    <td><strong>#{{ s.id }}</strong></td>
+                                    <td>{{ s.start_time or 'N/A' }}</td>
+                                    <td>{{ "%.1f"|format(s.duration_seconds or 0) }}s</td>
+                                    <td><span class="badge-snore">{{ s.total_snores or 0 }}</span></td>
+                                    <td>{{ "%.1f"|format(s.total_snore_duration or 0) }}s</td>
+                                    <td class="text-cyan">{{ "%.1f"|format(s.snoring_percentage or 0) }}%</td>
+                                    <td class="text-amber">{{ "%.1f"|format(s.avg_intensity_db or -80) }} dBFS</td>
+                                    <td class="text-violet">{{ "%.0f"|format(s.avg_dominant_freq_hz or s.dominant_freq_hz or 0) }} Hz</td>
+                                    <td class="text-emerald">{{ "%.1f"|format(s.events_per_minute or (((s.total_snores or 0) / ((s.duration_seconds or 1) / 60.0)))) }}</td>
+                                    <td>{{ "%.2f"|format(s.avg_snore_duration or s.avg_duration or 0) }}s</td>
+                                    <td>{{ "%.1f"|format(s.longest_snore or 0) }}s</td>
+                                    <td><span class="badge-personality">{{ s.snore_personality or 'Gentle Kitten Purr' }}</span></td>
+                                    <td style="text-align: right; white-space: nowrap;">
+                                        <a href="/report/{{ s.id }}" class="btn btn-sm btn-primary" style="margin-right: 6px;">
+                                            <i class="fa-solid fa-file-contract"></i> View Report
+                                        </a>
+                                        <a href="/api/sessions/{{ s.id }}/export/csv" class="btn btn-sm btn-outline" style="border: 1px solid var(--accent-cyan); color: var(--accent-cyan); padding: 4px 10px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">
+                                            <i class="fa-solid fa-file-csv"></i> Export CSV
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="14" class="text-center text-muted" style="padding: 28px;">
+                                        No SNORESCAN sessions yet. Your snoring empire starts here.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleSelectAll(master) {
+            const checkboxes = document.querySelectorAll('.session-cb');
+            checkboxes.forEach(cb => cb.checked = master.checked);
+        }
+
+        function submitComparison() {
+            const alertBox = document.getElementById('selectionAlert');
+            const checkedCbs = document.querySelectorAll('.session-cb:checked');
+            const ids = Array.from(checkedCbs).map(cb => cb.value);
+
+            if (ids.length < 2) {
+                if (alertBox) {
+                    alertBox.classList.remove('hidden');
+                    document.getElementById('selectionAlertText').innerText = "Select at least 2 sessions to compare.";
+                }
+                return;
+            }
+
+            if (alertBox) alertBox.classList.add('hidden');
+            window.location.href = `/compare?ids=${ids.join(',')}`;
+        }
+    </script>
+</body>
+</html>

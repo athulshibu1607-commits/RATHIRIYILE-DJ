@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNORESCAN - Continuous Snoring Detection & Analytics</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/day-night.css') }}">
+</head>
+<body class="day-mode">
+    <div class="app-container">
+        <!-- Top Navigation -->
+        <header class="navbar">
+            <div class="logo-group">
+                <div class="logo-icon"><i class="fa-solid fa-wave-square"></i></div>
+                <div class="logo-text">
+                    <span class="brand-name">SNORE<span class="highlight">SCAN</span></span>
+                    <span class="badge-useless">Phase 13 — Day/Night World</span>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="/" class="active"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="/monitoring"><i class="fa-solid fa-moon"></i> Night Monitoring</a>
+                <a href="/useless"><i class="fa-solid fa-fire text-amber"></i> Useless Hub</a>
+                <a href="/analysis"><i class="fa-solid fa-chart-line"></i> Analysis</a>
+                <a href="/history"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+                <a href="/compare"><i class="fa-solid fa-code-compare"></i> Compare</a>
+                <a href="/status"><i class="fa-solid fa-heart-pulse"></i> Status</a>
+                <a href="/demo" class="badge-demo-nav"><i class="fa-solid fa-wand-magic-sparkles"></i> Demo Mode</a>
+            </nav>
+        </header>
+
+        <!-- Medical Disclaimer Banner -->
+        <div class="medical-disclaimer-alert" id="medicalDisclaimer">
+            <div class="disclaimer-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="disclaimer-text">
+                <strong>IMPORTANT MEDICAL DISCLAIMER:</strong> SNORESCAN is created for entertainment, personal curiosity, and useless hackathon demonstration only. It <strong>NEVER</strong> provides a medical diagnosis, medical advice, or clinical assessment. All output data consists solely of non-medical pattern indicators and screening observations.
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <main class="hero-section">
+            <div class="hero-content">
+                <span class="pill-tag"><i class="fa-solid fa-sun"></i> DAY MODE ACTIVE — THE DAY IS BRIGHT</span>
+                <h1 class="hero-title" style="margin-bottom: 8px;">SNORE<span class="highlight">SCAN</span></h1>
+                <h2 style="font-size: 1.8rem; font-weight: 800; color: var(--accent-cyan); margin-bottom: 8px;">
+                    ☀️ YOUR SLEEP HAS A SOUNDTRACK.
+                </h2>
+                <p style="font-family: var(--font-heading); font-size: 18px; font-weight: 600; color: var(--text-muted); margin-bottom: 20px;">
+                    "Because apparently your sleep needed analytics."
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px;">
+                    <span class="status-badge badge-live" style="font-size: 13px; padding: 6px 14px;">REAL-TIME SNORING DETECTION</span>
+                    <span class="status-badge badge-live" style="font-size: 13px; padding: 6px 14px; background: rgba(168,85,247,0.2); color: #c084fc; border-color: #c084fc;">ACOUSTIC ANALYSIS</span>
+                    <span class="status-badge badge-live" style="font-size: 13px; padding: 6px 14px; background: rgba(245,158,11,0.2); color: #fbbf24; border-color: #fbbf24;">COMPLETELY USELESS STATISTICS</span>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="monitoring-control-card" style="max-width: 650px; margin: 0 auto 30px auto;">
+                    <div class="action-buttons" style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="DayNightWorld.transitionToNight(() => { window.location.href='/monitoring'; });" class="btn btn-primary btn-glow" style="font-size: 18px; padding: 16px 32px; border: none; cursor: pointer;">
+                            🌙 ENTER THE NIGHT
+                        </button>
+
+                        <a href="/demo" class="btn btn-secondary" style="font-size: 18px; padding: 16px 28px; text-decoration: none; border-color: var(--accent-amber); color: var(--accent-amber);">
+                            🎮 TRY DEMO MODE
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Short Feature Cards -->
+            <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                <div class="feature-card">
+                    <div class="card-icon icon-violet"><i class="fa-solid fa-microphone"></i></div>
+                    <h3>🎙️ Live Detection</h3>
+                    <p>Continuous PCM microphone streaming directly from your laptop. Detects snore bursts in real-time.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="card-icon icon-cyan"><i class="fa-solid fa-chart-simple"></i></div>
+                    <h3>📊 Acoustic Analysis</h3>
+                    <p>Calculates RMS energy, peak amplitude, dBFS loudness, dominant frequency, and spectral centroids.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="card-icon icon-emerald"><i class="fa-solid fa-database"></i></div>
+                    <h3>🗄️ Session History</h3>
+                    <p>Saves all monitored sessions and snore events locally in SQLite for multi-session trend analysis.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="card-icon icon-amber"><i class="fa-solid fa-masks-theater"></i></div>
+                    <h3>😂 Useless Intelligence</h3>
+                    <p>Snore Personalities, Boss Battles, Snore Weather, Roommate Damage Estimator, and Official Certificates.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>SNORESCAN &copy; 2026 - Useless Hackathon Project. Non-medical entertainment application.</p>
+        </footer>
+    </div>
+    <script src="{{ url_for('static', filename='js/day-night.js') }}"></script>
+</body>
+</html>
+

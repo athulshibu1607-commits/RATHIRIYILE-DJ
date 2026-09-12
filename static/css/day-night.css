@@ -1,0 +1,367 @@
+/* ==========================================================================
+   SNORESCAN Phase 13 — True Background Day/Night Orbit CSS System
+   ========================================================================== */
+
+:root {
+  /* Day Theme Variables (Default) */
+  --bg-primary: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-glass: rgba(255, 255, 255, 0.92);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #cbd5e1;
+  --accent-color: #0284c7;
+  --glow-color: rgba(2, 132, 199, 0.2);
+  --sky-gradient: linear-gradient(180deg, #e0f2fe 0%, #f8fafc 100%);
+  --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+body.night-mode {
+  /* Night Theme Variables */
+  --bg-primary: #030712;
+  --bg-surface: #0b0f19;
+  --bg-glass: rgba(11, 15, 25, 0.88);
+  --text-main: #f9fafb;
+  --text-muted: #9ca3af;
+  --border-color: #1f293d;
+  --accent-color: #38bdf8;
+  --glow-color: rgba(56, 189, 248, 0.25);
+  --sky-gradient: radial-gradient(circle at 50% 30%, #0b1329 0%, #030712 100%);
+  --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7);
+}
+
+/* Base Body Transition */
+body {
+  background: var(--bg-primary);
+  color: var(--text-main);
+  transition: background-color 1.5s ease, color 1.5s ease;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   Persistent Fixed Background Layer (Behind UI, Pointer Events Disabled)
+   ========================================================================== */
+
+#day-night-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--sky-gradient);
+  transition: background 1.8s ease;
+  overflow: hidden;
+}
+
+/* Celestial Elements positioned in viewport percentage */
+.celestial-sun {
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fde047 30%, #eab308 100%);
+  box-shadow: 0 0 45px #fde047, 0 0 90px rgba(250, 204, 21, 0.6);
+  transform: translate(-50%, -50%);
+  will-change: left, top, transform, opacity;
+  pointer-events: none;
+}
+
+.sun-rays {
+  position: absolute;
+  top: -17px;
+  left: -17px;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 2px dashed rgba(250, 204, 21, 0.6);
+  animation: spinSunRays 25s linear infinite;
+}
+
+.celestial-moon {
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 40%, #cbd5e1 100%);
+  box-shadow: 0 0 35px rgba(248, 250, 252, 0.9), 0 0 70px rgba(56, 189, 248, 0.4);
+  transform: translate(-50%, -50%);
+  will-change: left, top, transform, opacity;
+  pointer-events: none;
+}
+
+/* Stars Layer */
+.stars-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.8s ease;
+  pointer-events: none;
+}
+
+body.night-mode .stars-layer {
+  opacity: 1;
+}
+
+.star {
+  position: absolute;
+  background: #ffffff;
+  border-radius: 50%;
+  animation: twinkle 3s ease-in-out infinite alternate;
+}
+
+/* Atmosphere Cloud Particles */
+.clouds-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.cloud {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  filter: blur(6px);
+  animation: floatCloud 50s linear infinite;
+}
+
+body.night-mode .cloud {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Keyframe Animations */
+@keyframes spinSunRays {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.2; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes floatCloud {
+  0% { transform: translateX(-15vw); }
+  100% { transform: translateX(115vw); }
+}
+
+/* ==========================================================================
+   Day Mode Contrast & UI Adaptation Overrides
+   ========================================================================== */
+
+body.day-mode {
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --bg-card: rgba(255, 255, 255, 0.92);
+  --border-color: #cbd5e1;
+}
+
+body.day-mode .navbar {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+body.day-mode .nav-links a {
+  color: #334155;
+}
+
+body.day-mode .nav-links a:hover, body.day-mode .nav-links a.active {
+  color: #0284c7;
+  background: rgba(2, 132, 199, 0.08);
+}
+
+body.day-mode .brand-name {
+  color: #0f172a;
+}
+
+body.day-mode .card,
+body.day-mode .metric-card,
+body.day-mode .session-info-card,
+body.day-mode .feature-card {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: #cbd5e1;
+  color: #0f172a;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+body.day-mode h1,
+body.day-mode h2,
+body.day-mode h3,
+body.day-mode h4 {
+  color: #0f172a;
+}
+
+/* Disclaimer Alert Contrast */
+body.day-mode .medical-disclaimer-alert {
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #9f1239;
+  font-weight: 600;
+}
+
+body.day-mode .medical-disclaimer-alert .disclaimer-icon {
+  color: #be123c;
+}
+
+/* Snore Boss Arena Styling */
+.boss-arena-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 2.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.boss-header-title {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #ef4444;
+  text-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+  margin-bottom: 0.5rem;
+}
+
+.boss-avatar-wrapper {
+  margin: 1.5rem auto;
+  position: relative;
+  width: 130px;
+  height: 130px;
+}
+
+.boss-icon {
+  font-size: 5rem;
+  display: inline-block;
+  animation: bossFloat 3s ease-in-out infinite alternate;
+}
+
+@keyframes bossFloat {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-12px) scale(1.05); }
+}
+
+.boss-icon.hit {
+  animation: bossHit 0.4s ease-in-out;
+}
+
+@keyframes bossHit {
+  0% { transform: scale(1.2) rotate(10deg); filter: brightness(1.5); }
+  50% { transform: scale(0.8) rotate(-10deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* HP Bar */
+.boss-hp-container {
+  width: 100%;
+  max-width: 500px;
+  height: 24px;
+  background: rgba(31, 41, 61, 0.8);
+  border-radius: 12px;
+  margin: 1rem auto;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+}
+
+.boss-hp-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #ef4444 0%, #f97316 100%);
+  transition: width 0.5s ease;
+}
+
+.boss-hp-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+/* Battle Action Buttons & Interactive Cards */
+.boss-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+  max-width: 600px;
+  margin: 1.5rem auto 0 auto;
+}
+
+.battle-btn, .court-opt-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.battle-btn:hover, .court-opt-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-color);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.15);
+}
+
+.battle-btn-attack {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border: none;
+}
+
+.battle-btn-attack:hover {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+}
+
+.court-card, .trivia-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: var(--card-shadow);
+}
+
+.court-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.verdict-box {
+  background: rgba(2, 132, 199, 0.08);
+  border-left: 4px solid var(--accent-color);
+  padding: 1.25rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  color: var(--text-main);
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  #day-night-background, .celestial-sun, .celestial-moon, .sun-rays, .star, .cloud {
+    animation: none !important;
+    transition: none !important;
+  }
+}

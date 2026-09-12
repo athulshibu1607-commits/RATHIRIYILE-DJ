@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Session Report #{{ session.id if session else '' }} - SNORESCAN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/day-night.css') }}">
+    <!-- Chart.js for Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="day-mode">
+    <div class="app-container">
+        <!-- Header Navbar -->
+        <header class="navbar">
+            <div class="logo-group">
+                <div class="logo-icon"><i class="fa-solid fa-wave-square"></i></div>
+                <div class="logo-text">
+                    <span class="brand-name">SNORE<span class="highlight">SCAN</span></span>
+                    <span class="badge-useless">☀️ Morning Report</span>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="/"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="/monitoring"><i class="fa-solid fa-moon"></i> Night Monitoring</a>
+                <a href="/analysis"><i class="fa-solid fa-chart-line"></i> Analysis</a>
+                <a href="/history"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+                <a href="/compare"><i class="fa-solid fa-code-compare"></i> Compare</a>
+                <a href="/status"><i class="fa-solid fa-heart-pulse"></i> Status</a>
+                <a href="/demo" class="badge-demo-nav"><i class="fa-solid fa-wand-magic-sparkles"></i> Demo Mode</a>
+            </nav>
+        </header>
+
+
+        {% if is_demo %}
+        <div class="card" style="background: rgba(245,158,11,0.15); border: 2px solid var(--accent-amber); margin-bottom: 20px; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px; color: var(--accent-amber); font-weight: 700; font-size: 16px;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px;"></i>
+                <span>⚠️ DEMO MODE — FICTIONAL DATA (SQLite Database Isolated)</span>
+            </div>
+            <a href="/history" class="btn btn-secondary" style="border-color: var(--accent-amber); color: #fff; text-decoration: none;">
+                <i class="fa-solid fa-right-from-bracket"></i> EXIT DEMO
+            </a>
+        </div>
+        {% else %}
+        <!-- Mandatory Non-Diagnostic Disclaimer -->
+        <div class="medical-disclaimer-alert">
+            <div class="disclaimer-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="disclaimer-text">
+                <strong>NON-MEDICAL DEVICE NOTICE:</strong> SNOREScan reports contain acoustic observations and entertainment-oriented analysis. It is NOT a medical diagnosis.
+            </div>
+        </div>
+        {% endif %}
+
+        <main class="page-content">
+            {% if session %}
+            <!-- PHASE 8 & 9: SESSION COMPLETE CARD & EXPORT BUTTON -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.15)); border: 1px solid var(--accent-emerald-glow); margin-bottom: 24px; padding: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <div style="font-size: 13px; font-weight: 700; color: var(--accent-emerald); text-transform: uppercase; letter-spacing: 1px;">
+                        <i class="fa-solid fa-circle-check"></i> SESSION COMPLETE
+                    </div>
+                    <h1 style="font-family: var(--font-heading); font-size: 28px; font-weight: 800; color: var(--text-main); margin-top: 4px; margin-bottom: 0;">
+                        Session #{{ session.id }}
+                    </h1>
+
+                    <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                        Start: {{ session.start_time or 'N/A' }} | End: {{ session.end_time or 'N/A' }}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <div style="text-align: right; margin-right: 10px;">
+                        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Monitoring Duration</div>
+                        <div style="font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--accent-cyan);">
+                            {{ "%.1f"|format(session.duration_seconds or 0) }} s
+                        </div>
+                    </div>
+                    <div>
+                        <a href="/api/sessions/{{ session.id }}/export/csv" class="btn btn-primary" style="padding: 10px 16px; font-size: 14px; text-decoration: none;">
+                            <i class="fa-solid fa-file-csv"></i> EXPORT SESSION DATA (CSV)
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PHASE 13: THE SNORE BOSS ARENA -->
+            {% if boss_data %}
+            <div class="boss-arena-card">
+                <div class="boss-header-title">👹 THE SNORE BOSS: {{ boss_data.name }}</div>
+                <div style="font-size: 14px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px;">
+                    LEVEL {{ boss_data.level }} | BOSS POWER: {{ boss_data.boss_power }} PTS
+                </div>
+
+                <div class="boss-avatar-wrapper">
+                    <div class="boss-icon" id="boss-icon">👹</div>
+                </div>
+
+                <!-- HP Bar -->
+                <div class="boss-hp-container">
+                    <div class="boss-hp-bar" id="boss-hp-bar"></div>
+                    <div class="boss-hp-text" id="boss-hp-text">{{ boss_data.hp }} / {{ boss_data.max_hp }} HP</div>
+                </div>
+
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 10px; font-size: 13px; font-weight: 600;">
+                    <span>⚔️ Attack Power: <strong style="color: #ef4444;">{{ boss_data.attack_power }}</strong></span>
+                    <span>🌪️ Chaos Index: <strong style="color: #a855f7;">{{ boss_data.chaos }}%</strong></span>
+                    <span>💥 Special Attack: <strong style="color: #0284c7;">{{ boss_data.special_move }}</strong></span>
+                </div>
+
+                <!-- Battle Controls -->
+                <div class="boss-actions-grid">
+                    <button class="battle-btn battle-btn-attack" onclick="handleBossAction('attack')">⚔️ ATTACK</button>
+                    <button class="battle-btn" onclick="handleBossAction('defend')">🛡️ DEFEND</button>
+                    <button class="battle-btn" onclick="handleBossAction('run')">🏃 RUN</button>
+                    <button class="battle-btn" onclick="handleBossAction('surrender')">💀 SURRENDER</button>
+                </div>
+
+                <div class="battle-log" id="boss-battle-log">
+                    {% if boss_data.is_sleeping %}
+                    😴 The Snore Boss is fast asleep... Zero snores detected!
+                    {% else %}
+                    ⚔️ Click ATTACK to strike the Snore Boss!
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- PHASE 13: INTERACTIVE SNORE COURT & TRIVIA -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
+                <!-- Snore Court -->
+                <div class="court-card">
+                    <h3 style="font-size: 1.2rem; font-weight: 800; color: #0284c7; margin: 0;">
+                        ⚖️ THE PEOPLE VS. YOUR SNORING
+                    </h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; margin-bottom: 12px;">
+                        Who is responsible for the acoustic vibrations recorded during this session?
+                    </p>
+                    <div class="court-options-grid">
+                        <button class="court-opt-btn" onclick="selectCulprit('ME')">😴 ME</button>
+                        <button class="court-opt-btn" onclick="selectCulprit('MY ROOMMATE')">🧑🤝🧑 ROOMMATE</button>
+                        <button class="court-opt-btn" onclick="selectCulprit('THE DOG')">🐕 THE DOG</button>
+                        <button class="court-opt-btn" onclick="selectCulprit('A GHOST')">👻 A GHOST</button>
+                        <button class="court-opt-btn" onclick="selectCulprit('ALIENS')">🛸 ALIENS</button>
+                        <button class="court-opt-btn" onclick="selectCulprit('UNKNOWN ENTITY')">❓ UNKNOWN</button>
+                    </div>
+                    <div class="verdict-box" id="court-verdict-box" style="display: none;"></div>
+                </div>
+
+                <!-- Guess The Snore Trivia -->
+                {% if trivia_data %}
+                <div class="trivia-card">
+                    <h3 style="font-size: 1.2rem; font-weight: 800; color: #a855f7; margin: 0;">
+                        🕵️ GUESS THE SNORE TRIVIA
+                    </h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; margin-bottom: 12px;">
+                        {{ trivia_data.question }}
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        {% for opt in trivia_data.options %}
+                        <button class="court-opt-btn trivia-opt-btn" onclick="answerTrivia({{ 'true' if opt.correct else 'false' }}, this)">
+                            {{ opt.label }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <div id="trivia-feedback" style="margin-top: 12px; font-weight: 700; font-size: 0.9rem;"></div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- SECTION 1: SNORESCAN USELESS INTELLIGENCE™ (TOP HERO SECTION) -->
+
+            {% if fun_data %}
+            <div class="section-title" style="margin-top: 15px;">
+                <h3><i class="fa-solid fa-wand-magic-sparkles text-rose"></i> 1. SNORESCAN USELESS INTELLIGENCE™</h3>
+            </div>
+
+            <!-- Funny Session Title Banner -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(244,63,94,0.12), rgba(139,92,246,0.12)); border: 1px solid rgba(244,63,94,0.3); margin-bottom: 25px; text-align: center; padding: 22px;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--accent-rose); text-transform: uppercase; letter-spacing: 1.5px;">DETERMINISTIC SESSION TITLE</div>
+                <h2 style="font-family: var(--font-heading); font-size: 32px; font-weight: 900; color: #fff; margin-top: 6px; letter-spacing: 0.5px;">
+                    "{{ fun_data.session_title }}"
+                </h2>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                    Personality: <strong class="text-violet">{{ fun_data.personality_2_0.name }}</strong> — {{ fun_data.personality_2_0.explanation }}
+                </div>
+            </div>
+
+            <!-- Snore Power Level & Roommate Damage Estimator -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <!-- Snore Power Level -->
+                <div class="card" style="border: 1px solid rgba(6,182,212,0.3);">
+                    <h3><i class="fa-solid fa-gauge-high text-cyan"></i> SNORE POWER LEVEL</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+                        <div>
+                            <div style="font-size: 11px; color: var(--text-muted);">POWER SCORE</div>
+                            <div style="font-family: var(--font-heading); font-size: 42px; font-weight: 900; color: var(--accent-cyan); line-height: 1;">
+                                {{ fun_data.snore_power.score }}<span style="font-size: 18px; color: var(--text-muted);">/100</span>
+                            </div>
+                        </div>
+                        <span class="badge-useless" style="font-size: 14px; padding: 6px 12px; background: rgba(6,182,212,0.15); color: var(--accent-cyan); border-color: rgba(6,182,212,0.3);">
+                            {{ fun_data.snore_power.level_name }}
+                        </span>
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px;">
+                        *{{ fun_data.snore_power.label }}
+                    </div>
+                </div>
+
+                <!-- Roommate Damage Estimator -->
+                <div class="card" style="border: 1px solid rgba(244,63,94,0.3);">
+                    <h3><i class="fa-solid fa-heart-crack text-rose"></i> ROOMMATE DAMAGE ESTIMATOR</h3>
+                    <div style="margin-top: 12px;">
+                        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">ESTIMATED PATIENCE REMAINING</div>
+                        <div style="font-family: var(--font-heading); font-size: 34px; font-weight: 800; color: var(--accent-rose); margin-top: 2px;">
+                            {{ fun_data.roommate_damage.patience_remaining }}%
+                        </div>
+                        <div style="font-size: 13.5px; font-weight: 600; color: var(--text-primary); margin-top: 4px;">
+                            "{{ fun_data.roommate_damage.description }}"
+                        </div>
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 12px;">
+                        *{{ fun_data.roommate_damage.label }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sleep Boss Battle & Sleep Genre -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <!-- Sleep Boss Battle -->
+                <div class="card" style="border: 1px solid rgba(245,158,11,0.3); background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(11,15,25,0.7));">
+                    <h3><i class="fa-solid fa-hand-fist text-amber"></i> ⚔️ SLEEP BOSS BATTLE</h3>
+                    <div style="margin-top: 12px;">
+                        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">SESSION BOSS ENCOUNTER</div>
+                        <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--accent-amber); margin-top: 2px;">
+                            {{ fun_data.boss_battle.boss_level }}
+                        </div>
+                        <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 13px;">
+                            <span>Boss Power: <strong class="text-amber">{{ fun_data.boss_battle.power }}/100</strong></span>
+                            <span>Special Move: <strong class="text-violet">{{ fun_data.boss_battle.special_move }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sleep DJ Genre -->
+                <div class="card" style="border: 1px solid rgba(139,92,246,0.3); background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(11,15,25,0.7));">
+                    <h3><i class="fa-solid fa-compact-disc text-violet"></i> 🎵 SLEEP DJ / MUSIC GENRE</h3>
+                    <div style="margin-top: 12px;">
+                        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">YOUR BEDROOM GENRE</div>
+                        <div style="font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--accent-violet); margin-top: 2px;">
+                            {{ fun_data.sleep_genre.genre }}
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px;">
+                            "{{ fun_data.sleep_genre.description }}"
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Snore Weather & Forecast -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <div class="card">
+                    <h3><i class="fa-solid fa-cloud-bolt text-cyan"></i> 🌦️ SNORE WEATHER</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; font-size: 13px;">
+                        <div><span style="color: var(--text-muted);">State:</span> <strong class="text-cyan">{{ fun_data.snore_weather.state }}</strong></div>
+                        <div><span style="color: var(--text-muted);">Temp:</span> <strong>{{ fun_data.snore_weather.temperature }}</strong></div>
+                        <div><span style="color: var(--text-muted);">Wind:</span> <strong>{{ fun_data.snore_weather.wind }}</strong></div>
+                        <div><span style="color: var(--text-muted);">Intensity:</span> <strong>{{ fun_data.snore_weather.storm_intensity }}</strong></div>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 12px;">*{{ fun_data.snore_weather.label }}</div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fa-solid fa-crystal-ball text-violet"></i> 🔮 TONIGHT'S SNORE FORECAST</h3>
+                    <div style="margin-top: 12px;">
+                        <div style="font-size: 16px; font-weight: 700; color: var(--accent-violet);">{{ fun_data.snore_forecast.probability }}</div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">{{ fun_data.snore_forecast.advice }}</div>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 12px;">*{{ fun_data.snore_forecast.label }}</div>
+                </div>
+            </div>
+
+            <!-- Snore Achievements & Combo Banner -->
+            {% if fun_data.combo_info and fun_data.combo_info.banner %}
+            <div class="card" style="background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(244,63,94,0.2)); border: 1px solid var(--accent-amber); margin-bottom: 25px; padding: 16px; text-align: center;">
+                <h3 style="color: var(--accent-amber); font-size: 20px; margin: 0;">{{ fun_data.combo_info.banner }}</h3>
+            </div>
+            {% endif %}
+
+            <div class="card" style="margin-bottom: 25px;">
+                <h3><i class="fa-solid fa-trophy text-amber"></i> 🏆 UNLOCKED SNORE ACHIEVEMENTS</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px;">
+                    {% for ach in fun_data.achievements %}
+                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px;">
+                        <div style="font-size: 24px;">{{ ach.icon }}</div>
+                        <div style="font-weight: 700; font-size: 13.5px; color: var(--accent-amber); margin-top: 4px;">{{ ach.title }}</div>
+                        <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px;">{{ ach.desc }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Snore Commentator & Useless Report Card -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <div class="card">
+                    <h3><i class="fa-solid fa-microphone-alt text-cyan"></i> 🎙️ SNORE COMMENTATOR</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+                        {% for comm in fun_data.commentary %}
+                        <div style="padding: 8px 12px; background: rgba(11,15,25,0.6); border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span class="text-cyan" style="font-family: monospace;">{{ comm.time }}</span>
+                            <span style="font-weight: 600;">{{ comm.message }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fa-solid fa-clipboard-check text-emerald"></i> 📋 USELESS REPORT CARD</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; font-size: 13px;">
+                        <div>Snore Loudness: <strong class="text-rose">{{ fun_data.report_card.loudness }}</strong></div>
+                        <div>Snore Frequency: <strong class="text-amber">{{ fun_data.report_card.frequency }}</strong></div>
+                        <div>Sleep Chaos: <strong class="text-violet">{{ fun_data.report_card.chaos }}</strong></div>
+                        <div>Roommate Danger: <strong class="text-rose">{{ fun_data.report_card.danger }}</strong></div>
+                        <div>Engine Quality: <strong class="text-emerald">{{ fun_data.report_card.engine_quality }}</strong></div>
+                        <div>Overall Uselessness: <strong class="text-cyan">{{ fun_data.report_card.overall_uselessness }}</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Official SnoreScan Certificate & Screenshot Share Card -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <!-- Certificate -->
+                <div class="card" style="border: 2px goldenrod dashed; background: rgba(245,158,11,0.05); text-align: center; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 4px;">🏅</div>
+                    <h3 style="color: var(--accent-amber); font-family: var(--font-heading); font-size: 18px;">OFFICIAL SNORESCAN CERTIFICATE</h3>
+                    <p style="font-size: 13px; color: var(--text-primary); margin-top: 10px; line-height: 1.5;">
+                        "This certifies that <strong>Session #{{ fun_data.certificate.session_id }}</strong> successfully generated <strong>{{ fun_data.certificate.event_count }}</strong> acoustic events during <strong>{{ fun_data.certificate.duration_minutes }}</strong> minutes of monitoring."
+                    </p>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 14px; font-style: italic;">
+                        {{ fun_data.certificate.authority }}
+                    </div>
+                </div>
+
+                <!-- Screenshot Share Card -->
+                <div class="card" style="border: 1px solid var(--border-glow); background: var(--bg-dark); padding: 20px; box-shadow: 0 0 20px rgba(6,182,212,0.15);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                        <span class="brand-name" style="font-size: 18px; font-weight: 800;">SNORE<span class="highlight">SCAN</span></span>
+                        <span class="badge-useless">Session #{{ fun_data.share_card.session_id }}</span>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 13px; display: flex; flex-direction: column; gap: 6px;">
+                        <div>Personality: <strong class="text-violet">{{ fun_data.share_card.personality }}</strong></div>
+                        <div>Snore Power: <strong class="text-cyan">{{ fun_data.share_card.power }}/100</strong></div>
+                        <div>Events Detected: <strong class="text-amber">{{ fun_data.share_card.events }}</strong></div>
+                        <div>Snoring Duration %: <strong class="text-emerald">{{ fun_data.share_card.snoring_pct }}%</strong></div>
+                        <div>Roommate Survival: <strong>{{ fun_data.share_card.roommate_survival }}/100</strong></div>
+                        <div>Achievement: <strong class="text-amber">{{ fun_data.share_card.top_achievement }}</strong></div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- SECTION 2: SESSION ACTIVITY SUMMARY & TECHNICAL METRICS -->
+            <div class="section-title">
+                <h3><i class="fa-solid fa-chart-pie text-violet"></i> 2. Technical Session Activity Summary</h3>
+            </div>
+            <div class="report-stats-grid" style="margin-bottom: 25px;">
+                <div class="card stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Duration</span>
+                        <span class="stat-val">{{ "%.1f"|format(session.duration_seconds or 0) }} s</span>
+                    </div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-bell"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Event Count</span>
+                        <span class="stat-val text-violet">{{ session.total_snores or 0 }}</span>
+                    </div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-waveform"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Snoring Duration / %</span>
+                        <span class="stat-val text-cyan">{{ "%.1f"|format(stats.total_snore_duration or 0) }}s ({{ "%.1f"|format(stats.snoring_percentage or 0) }}%)</span>
+                    </div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-moon"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Quiet Duration / %</span>
+                        <span class="stat-val text-emerald">{{ "%.1f"|format(stats.total_quiet_duration or 0) }}s ({{ "%.1f"|format(stats.quiet_percentage or 100) }}%)</span>
+                    </div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-bolt"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Events / Minute</span>
+                        <span class="stat-val text-amber">{{ "%.1f"|format(stats.events_per_minute or 0) }}</span>
+                    </div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-arrows-left-right"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Avg Event Spacing</span>
+                        <span class="stat-val">{{ "%.1f"|format(stats.avg_event_spacing or 0) }} s</span>
+                    </div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Longest Quiet Period</span>
+                        <span class="stat-val text-emerald">{{ "%.1f"|format(stats.longest_quiet_period or 0) }} s</span>
+                    </div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Largest Cluster</span>
+                        <span class="stat-val text-violet">{{ stats.largest_cluster or 0 }} events</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: QUIET PERIOD ANALYSIS -->
+            <div class="section-title">
+                <h3><i class="fa-solid fa-bed text-emerald"></i> 2. Quiet Period Analysis</h3>
+            </div>
+            <div class="card" style="margin-bottom: 25px; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 16px;">
+                    <div>
+                        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">LONGEST QUIET PERIOD</div>
+                        <div style="font-family: var(--font-heading); font-size: 32px; font-weight: 800; color: var(--accent-emerald);">
+                            {{ "%.1f"|format(stats.longest_quiet_period or 0) }} seconds
+                        </div>
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-secondary);">
+                        Total Quiet Time: <strong class="text-emerald">{{ "%.1f"|format(stats.total_quiet_duration or 0) }}s</strong> ({{ "%.1f"|format(stats.quiet_percentage or 100) }}% of session)
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="background: rgba(11,15,25,0.6); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 11px; color: var(--text-muted);">BEFORE FIRST EVENT</div>
+                        <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">
+                            {{ "%.1f"|format(stats.quiet_before_first or 0) }} s
+                        </div>
+                    </div>
+                    <div style="background: rgba(11,15,25,0.6); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 11px; color: var(--text-muted);">LONGEST GAP BETWEEN EVENTS</div>
+                        <div style="font-size: 18px; font-weight: 700; color: var(--accent-cyan); margin-top: 2px;">
+                            {{ "%.1f"|format(stats.longest_quiet_between or 0) }} s
+                        </div>
+                    </div>
+                    <div style="background: rgba(11,15,25,0.6); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="font-size: 11px; color: var(--text-muted);">AFTER LAST EVENT</div>
+                        <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">
+                            {{ "%.1f"|format(stats.quiet_after_last or 0) }} s
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: STRONGEST & LONGEST EVENTS TOP 3 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <!-- Strongest Events -->
+                <div class="card">
+                    <h3><i class="fa-solid fa-volume-high text-amber"></i> STRONGEST SNORING EVENTS</h3>
+                    {% if stats.strongest_events and stats.strongest_events|length > 0 %}
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
+                            {% for se in stats.strongest_events %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px;">
+                                <div>
+                                    <strong style="color: var(--accent-amber); font-size: 14px;">EVENT #{{ "%02d"|format(se.event_number) }}</strong>
+                                    <span style="font-size: 12px; color: var(--text-secondary); margin-left: 8px;">{{ se.start_time }}</span>
+                                </div>
+                                <div style="display: flex; gap: 12px; font-size: 13px;">
+                                    <span class="text-amber"><strong>{{ se.intensity_db }} dBFS</strong></span>
+                                    <span>{{ se.duration_seconds }}s</span>
+                                    <span class="text-violet">{{ "%.0f"|format(se.dominant_freq_hz) }} Hz</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px;">
+                            No snoring events detected.
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Longest Events -->
+                <div class="card">
+                    <h3><i class="fa-solid fa-ruler-horizontal text-violet"></i> LONGEST SNORING EVENTS</h3>
+                    {% if stats.longest_events and stats.longest_events|length > 0 %}
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
+                            {% for le in stats.longest_events %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.25); border-radius: 8px;">
+                                <div>
+                                    <strong style="color: var(--accent-violet); font-size: 14px;">EVENT #{{ "%02d"|format(le.event_number) }}</strong>
+                                    <span style="font-size: 12px; color: var(--text-secondary); margin-left: 8px;">{{ le.start_time }}</span>
+                                </div>
+                                <div style="display: flex; gap: 12px; font-size: 13px;">
+                                    <span class="text-violet"><strong>{{ le.duration_seconds }}s</strong></span>
+                                    <span class="text-amber">{{ le.intensity_db }} dBFS</span>
+                                    <span class="text-emerald">{{ "%.0f"|format(le.dominant_freq_hz) }} Hz</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px;">
+                            No snoring events detected.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- SECTION 4: ADVANCED TIMELINE & HEATMAP -->
+            <div class="section-title">
+                <h3><i class="fa-solid fa-timeline text-cyan"></i> 4. Advanced Timeline & Session Activity Heatmap</h3>
+            </div>
+
+            <!-- Timeline -->
+            <div class="card" style="margin-bottom: 20px;">
+                <h3><i class="fa-solid fa-clock"></i> Snoring Activity Timeline (START → END)</h3>
+                {% if events and events|length > 0 %}
+                    <div class="timeline-bar-container" style="padding: 16px; background: rgba(11,15,25,0.6); border-radius: 12px; border: 1px solid var(--border-color); margin-top: 12px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+                            <span><i class="fa-solid fa-play text-emerald"></i> START (00:00)</span>
+                            <span><i class="fa-solid fa-flag-checkered text-rose"></i> END ({{ "%.1f"|format(session.duration_seconds or 0) }}s)</span>
+                        </div>
+                        <div style="position: relative; height: 38px; background: rgba(255,255,255,0.05); border-radius: 19px; width: 100%; overflow: hidden;">
+                            {% for e in events %}
+                                {% set start_pct = ((e.start_offset_sec or 0) / (session.duration_seconds if session.duration_seconds > 0 else 1)) * 100 %}
+                                {% set dur_pct = ((e.duration_seconds or 0.5) / (session.duration_seconds if session.duration_seconds > 0 else 1)) * 100 %}
+                                {% set width_pct = [dur_pct, 2.0]|max %}
+                                <div title="Event #{{ e.event_number or loop.index }}: {{ e.start_time }} | {{ "%.2f"|format(e.duration_seconds) }}s | {{ "%.1f"|format(e.intensity_db) }} dBFS | {{ "%.0f"|format(e.dominant_freq_hz) }}Hz"
+                                     style="position: absolute; left: {{ "%.2f"|format(start_pct) }}%; width: {{ "%.2f"|format(width_pct) }}%; height: 100%; background: linear-gradient(135deg, var(--accent-violet), var(--accent-cyan)); border-radius: 4px; opacity: 0.9; cursor: pointer; box-shadow: 0 0 8px var(--accent-violet-glow);"
+                                     onclick="selectEventDetails({{ loop.index0 }})">
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div style="display: flex; gap: 20px; font-size: 12px; color: var(--text-secondary); margin-top: 12px; flex-wrap: wrap;">
+                            <span><span style="display:inline-block; width:12px; height:12px; background:linear-gradient(135deg, var(--accent-violet), var(--accent-cyan)); border-radius:3px; margin-right:6px;"></span> Detected Snore Event (Click to inspect)</span>
+                            <span><span style="display:inline-block; width:12px; height:12px; background:rgba(255,255,255,0.05); border-radius:3px; margin-right:6px;"></span> Quiet Intermission</span>
+                        </div>
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 25px; color: var(--text-muted); font-size: 14px;">
+                        No snoring events detected — session remained quiet throughout.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Heatmap Segments -->
+            <div class="card" style="margin-bottom: 25px;">
+                <h3><i class="fa-solid fa-border-all text-emerald"></i> Session Activity Segments (Heatmap)</h3>
+                {% if stats.activity_heatmap and stats.activity_heatmap|length > 0 %}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-top: 12px;">
+                        {% for seg in stats.activity_heatmap %}
+                            <div style="padding: 10px; text-align: center; border-radius: 8px; border: 1px solid var(--border-color);
+                                {% if seg.activity_level == 'High' %}
+                                    background: rgba(244,63,94,0.15); border-color: rgba(244,63,94,0.4); color: var(--accent-rose);
+                                {% elif seg.activity_level == 'Low' %}
+                                    background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.4); color: var(--accent-amber);
+                                {% else %}
+                                    background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.2); color: var(--accent-emerald);
+                                {% endif %}">
+                                <div style="font-size: 10px; opacity: 0.8; text-transform: uppercase;">{{ seg.time_range }}</div>
+                                <div style="font-weight: 700; font-size: 14px; margin-top: 2px;">{{ seg.activity_level }}</div>
+                                <div style="font-size: 11px; opacity: 0.8;">{{ seg.event_count }} events</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- SECTION 5: ADVANCED GRAPHICAL ANALYSIS (6 CHARTS) -->
+            <div class="section-title" style="margin-top: 30px;">
+                <h3><i class="fa-solid fa-chart-column text-amber"></i> 5. Advanced Graphical Signal Analysis</h3>
+            </div>
+
+            {% if events and events|length > 0 %}
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <!-- 1. Frequency Spectrum FFT -->
+                <div class="card">
+                    <h3><i class="fa-solid fa-wave-square text-violet"></i> Frequency Spectrum (FFT)</h3>
+                    <div style="height: 220px; position: relative;">
+                        <canvas id="spectrumChartCanvas"></canvas>
+                        <div id="noSpectrumMsg" class="hidden" style="position: absolute; top: 45%; width: 100%; text-align: center; color: var(--text-secondary);">
+                            Frequency Spectrum Unavailable
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Event Intensity Graph -->
+                <div class="card">
+                    <h3><i class="fa-solid fa-chart-line text-cyan"></i> Event Intensity (dBFS)</h3>
+                    <div style="height: 220px;">
+                        <canvas id="intensityChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- 3. Dominant Frequency Graph -->
+                <div class="card">
+                    <h3><i class="fa-solid fa-chart-area text-emerald"></i> Dominant Frequency (Hz)</h3>
+                    <div style="height: 220px;">
+                        <canvas id="freqChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- 4. Event Duration Analysis -->
+                <div class="card">
+                    <h3><i class="fa-solid fa-ruler text-violet"></i> Event Duration Analysis (sec)</h3>
+                    <div style="height: 220px;">
+                        <canvas id="durationChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- 5. Event Spacing Analysis -->
+                <div class="card">
+                    <h3><i class="fa-solid fa-arrows-left-right text-amber"></i> Event Spacing Gaps (sec)</h3>
+                    <div style="height: 220px;">
+                        <canvas id="spacingChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- 6. Intensity vs Frequency Scatter Plot -->
+                <div class="card">
+                    <h3><i class="fa-solid fa-circle-dot text-cyan"></i> Intensity vs Dominant Frequency</h3>
+                    <div style="height: 220px;">
+                        <canvas id="scatterChartCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card" style="margin-bottom: 25px; text-align: center; padding: 40px; color: var(--text-muted);">
+                <i class="fa-solid fa-chart-simple" style="font-size: 32px; margin-bottom: 10px; display: block;"></i>
+                No snoring events detected — insufficient data for event graphs.
+            </div>
+            {% endif %}
+
+            <!-- SECTION 6: INTERACTIVE EVENT DETAILS PANEL -->
+            <div class="section-title" style="margin-top: 30px;">
+                <h3><i class="fa-solid fa-circle-info text-violet"></i> 6. Interactive Event Details Panel</h3>
+            </div>
+            <div class="card" style="margin-bottom: 25px;">
+                {% if events and events|length > 0 %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 16px;">
+                        <div>
+                            <label style="font-size: 13px; color: var(--text-secondary); margin-right: 10px;">Select Event to Inspect:</label>
+                            <select id="eventSelector" onchange="selectEventDetails(this.value)" style="background: var(--bg-dark); color: #fff; border: 1px solid var(--border-glow); padding: 8px 12px; border-radius: 6px; font-family: var(--font-body);">
+                                {% for e in events %}
+                                    <option value="{{ loop.index0 }}">Event #{{ "%02d"|format(e.event_number or loop.index) }} — {{ e.start_time }} ({{ e.duration_seconds }}s, {{ e.intensity_db }} dBFS)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <span class="badge-useless">Phase 4 Spectral Feature Breakdown</span>
+                    </div>
+
+                    <div id="eventDetailsCard" style="background: rgba(11,15,25,0.7); border: 1px solid var(--border-glow); border-radius: 12px; padding: 20px;">
+                        <!-- Injected via JavaScript -->
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+                        No snoring events detected during this session.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- SECTION 7: CHRONOLOGICAL EVENT HISTORY LIST -->
+            <div class="section-title" style="margin-top: 30px;">
+                <h3><i class="fa-solid fa-list-ul text-cyan"></i> 7. Chronological Event History</h3>
+            </div>
+            <div class="card" style="margin-bottom: 25px;">
+                {% if events and events|length > 0 %}
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                        {% for e in events %}
+                        <li style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px;">
+                            <div>
+                                <span class="text-cyan" style="font-weight: 700; font-family: monospace;">{{ e.start_time or '00:00:00' }}</span>
+                                <strong style="margin-left: 12px; color: var(--text-primary);">Event #{{ "%02d"|format(e.event_number or loop.index) }}</strong>
+                            </div>
+                            <div style="display: flex; gap: 15px; font-size: 13px;">
+                                <span class="text-violet">Duration: <strong>{{ "%.2f"|format(e.duration_seconds or 0) }}s</strong></span>
+                                <span class="text-amber">Intensity: <strong>{{ "%.1f"|format(e.intensity_db or -80) }} dBFS</strong></span>
+                                <span class="text-emerald">Freq: <strong>{{ "%.0f"|format(e.dominant_freq_hz or 0) }} Hz</strong></span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+                        No snoring events recorded in chronological history.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- SECTION 8: COMPLETE EVENT-BY-EVENT TABLE -->
+            <div class="card" style="margin-bottom: 30px;">
+                <h3><i class="fa-solid fa-table text-violet"></i> 8. Complete Event-by-Event Acoustic Metrics</h3>
+                <div style="max-height: 420px; overflow-y: auto; margin-top: 12px; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <table class="data-table" style="margin-top: 0;">
+                        <thead style="position: sticky; top: 0; background: var(--bg-dark); z-index: 2;">
+                            <tr>
+                                <th>#</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Duration</th>
+                                <th>dBFS</th>
+                                <th>RMS</th>
+                                <th>Peak</th>
+                                <th>Dominant Freq</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if events and events|length > 0 %}
+                                {% for e in events %}
+                                <tr>
+                                    <td><strong>#{{ e.event_number or loop.index }}</strong></td>
+                                    <td>{{ e.start_time or 'N/A' }}</td>
+                                    <td>{{ e.end_time or 'N/A' }}</td>
+                                    <td>{{ "%.2f"|format(e.duration_seconds or 0) }}s</td>
+                                    <td>{{ "%.1f"|format(e.intensity_db or -80) }} dBFS</td>
+                                    <td>{{ "%.6f"|format(e.rms_energy or 0) }}</td>
+                                    <td>{{ "%.4f"|format(e.peak_amplitude or 0) }}</td>
+                                    <td><strong class="text-violet">{{ "%.0f"|format(e.dominant_freq_hz or 0) }} Hz</strong></td>
+                                    <td><span class="badge-snore">{{ "%.0f"|format(e.confidence or 70) }}%</span></td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted" style="padding: 24px;">
+                                        No possible snoring events detected during this session.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 9: SNORESCAN USELESS INTELLIGENCE™ -->
+            {% if fun_data %}
+            <div class="section-title" style="margin-top: 35px;">
+                <h3><i class="fa-solid fa-wand-magic-sparkles text-rose"></i> 9. SNORESCAN USELESS INTELLIGENCE™</h3>
+            </div>
+
+            <!-- Funny Session Title Banner -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(244,63,94,0.12), rgba(139,92,246,0.12)); border: 1px solid rgba(244,63,94,0.3); margin-bottom: 25px; text-align: center; padding: 22px;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--accent-rose); text-transform: uppercase; letter-spacing: 1.5px;">DETERMINISTIC SESSION TITLE</div>
+                <h2 style="font-family: var(--font-heading); font-size: 32px; font-weight: 900; color: #fff; margin-top: 6px; letter-spacing: 0.5px;">
+                    "{{ fun_data.session_title }}"
+                </h2>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                    Personality: <strong class="text-violet">{{ fun_data.personality_2_0.name }}</strong> — {{ fun_data.personality_2_0.explanation }}
+                </div>
+            </div>
+
+            <!-- Snore Power Level & Roommate Damage Estimator -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <!-- Snore Power Level -->
+                <div class="card" style="border: 1px solid rgba(6,182,212,0.3);">
+                    <h3><i class="fa-solid fa-gauge-high text-cyan"></i> SNORE POWER LEVEL</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+                        <div>
+                            <div style="font-size: 11px; color: var(--text-muted);">POWER SCORE</div>
+                            <div style="font-family: var(--font-heading); font-size: 42px; font-weight: 900; color: var(--accent-cyan); line-height: 1;">
+                                {{ fun_data.snore_power.score }}<span style="font-size: 18px; color: var(--text-muted);">/100</span>
+                            </div>
+                        </div>
+                        <span class="badge-useless" style="font-size: 14px; padding: 6px 12px; background: rgba(6,182,212,0.15); color: var(--accent-cyan); border-color: rgba(6,182,212,0.3);">
+                            {{ fun_data.snore_power.level_name }}
+                        </span>
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px;">
+                        *{{ fun_data.snore_power.label }}
+                    </div>
+                </div>
+
+                <!-- Roommate Damage Estimator -->
+                <div class="card" style="border: 1px solid rgba(244,63,94,0.3);">
+                    <h3><i class="fa-solid fa-heart-crack text-rose"></i> ROOMMATE DAMAGE ESTIMATOR</h3>
+                    <div style="margin-top: 12px;">
+                        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">ESTIMATED PATIENCE REMAINING</div>
+                        <div style="font-family: var(--font-heading); font-size: 34px; font-weight: 800; color: var(--accent-rose); margin-top: 2px;">
+                            {{ fun_data.roommate_damage.patience_remaining }}%
+                        </div>
+                        <div style="font-size: 13.5px; font-weight: 600; color: var(--text-primary); margin-top: 4px;">
+                            "{{ fun_data.roommate_damage.description }}"
+                        </div>
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 12px;">
+                        *{{ fun_data.roommate_damage.label }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sleep Boss Battle & Sleep Genre -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <!-- Sleep Boss Battle -->
+                <div class="card" style="border: 1px solid rgba(245,158,11,0.3); background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(11,15,25,0.7));">
+                    <h3><i class="fa-solid fa-hand-fist text-amber"></i> ⚔️ SLEEP BOSS BATTLE</h3>
+                    <div style="margin-top: 12px;">
+                        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">SESSION BOSS ENCOUNTER</div>
+                        <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 800; color: var(--accent-amber); margin-top: 2px;">
+                            {{ fun_data.boss_battle.boss_level }}
+                        </div>
+                        <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 13px;">
+                            <span>Boss Power: <strong class="text-amber">{{ fun_data.boss_battle.power }}/100</strong></span>
+                            <span>Special Move: <strong class="text-violet">{{ fun_data.boss_battle.special_move }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sleep DJ Genre -->
+                <div class="card" style="border: 1px solid rgba(139,92,246,0.3); background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(11,15,25,0.7));">
+                    <h3><i class="fa-solid fa-compact-disc text-violet"></i> 🎵 SLEEP DJ / MUSIC GENRE</h3>
+                    <div style="margin-top: 12px;">
+                        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">YOUR BEDROOM GENRE</div>
+                        <div style="font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--accent-violet); margin-top: 2px;">
+                            {{ fun_data.sleep_genre.genre }}
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px;">
+                            "{{ fun_data.sleep_genre.description }}"
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Snore Weather & Forecast -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <div class="card">
+                    <h3><i class="fa-solid fa-cloud-bolt text-cyan"></i> 🌦️ SNORE WEATHER</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; font-size: 13px;">
+                        <div><span style="color: var(--text-muted);">State:</span> <strong class="text-cyan">{{ fun_data.snore_weather.state }}</strong></div>
+                        <div><span style="color: var(--text-muted);">Temp:</span> <strong>{{ fun_data.snore_weather.temperature }}</strong></div>
+                        <div><span style="color: var(--text-muted);">Wind:</span> <strong>{{ fun_data.snore_weather.wind }}</strong></div>
+                        <div><span style="color: var(--text-muted);">Intensity:</span> <strong>{{ fun_data.snore_weather.storm_intensity }}</strong></div>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 12px;">*{{ fun_data.snore_weather.label }}</div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fa-solid fa-crystal-ball text-violet"></i> 🔮 TONIGHT'S SNORE FORECAST</h3>
+                    <div style="margin-top: 12px;">
+                        <div style="font-size: 16px; font-weight: 700; color: var(--accent-violet);">{{ fun_data.snore_forecast.probability }}</div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">{{ fun_data.snore_forecast.advice }}</div>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 12px;">*{{ fun_data.snore_forecast.label }}</div>
+                </div>
+            </div>
+
+            <!-- Snore Achievements & Combo Banner -->
+            {% if fun_data.combo_info and fun_data.combo_info.banner %}
+            <div class="card" style="background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(244,63,94,0.2)); border: 1px solid var(--accent-amber); margin-bottom: 25px; padding: 16px; text-align: center;">
+                <h3 style="color: var(--accent-amber); font-size: 20px; margin: 0;">{{ fun_data.combo_info.banner }}</h3>
+            </div>
+            {% endif %}
+
+            <div class="card" style="margin-bottom: 25px;">
+                <h3><i class="fa-solid fa-trophy text-amber"></i> 🏆 UNLOCKED SNORE ACHIEVEMENTS</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px;">
+                    {% for ach in fun_data.achievements %}
+                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px;">
+                        <div style="font-size: 24px;">{{ ach.icon }}</div>
+                        <div style="font-weight: 700; font-size: 13.5px; color: var(--accent-amber); margin-top: 4px;">{{ ach.title }}</div>
+                        <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px;">{{ ach.desc }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Snore Commentator & Useless Report Card -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <div class="card">
+                    <h3><i class="fa-solid fa-microphone-alt text-cyan"></i> 🎙️ SNORE COMMENTATOR</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+                        {% for comm in fun_data.commentary %}
+                        <div style="padding: 8px 12px; background: rgba(11,15,25,0.6); border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between;">
+                            <span class="text-cyan" style="font-family: monospace;">{{ comm.time }}</span>
+                            <span style="font-weight: 600;">{{ comm.message }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fa-solid fa-clipboard-check text-emerald"></i> 📋 USELESS REPORT CARD</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; font-size: 13px;">
+                        <div>Snore Loudness: <strong class="text-rose">{{ fun_data.report_card.loudness }}</strong></div>
+                        <div>Snore Frequency: <strong class="text-amber">{{ fun_data.report_card.frequency }}</strong></div>
+                        <div>Sleep Chaos: <strong class="text-violet">{{ fun_data.report_card.chaos }}</strong></div>
+                        <div>Roommate Danger: <strong class="text-rose">{{ fun_data.report_card.danger }}</strong></div>
+                        <div>Engine Quality: <strong class="text-emerald">{{ fun_data.report_card.engine_quality }}</strong></div>
+                        <div>Overall Uselessness: <strong class="text-cyan">{{ fun_data.report_card.overall_uselessness }}</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Official SnoreScan Certificate & Screenshot Share Card -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <!-- Certificate -->
+                <div class="card" style="border: 2px goldenrod dashed; background: rgba(245,158,11,0.05); text-align: center; padding: 24px;">
+                    <div style="font-size: 32px; margin-bottom: 4px;">🏅</div>
+                    <h3 style="color: var(--accent-amber); font-family: var(--font-heading); font-size: 18px;">OFFICIAL SNORESCAN CERTIFICATE</h3>
+                    <p style="font-size: 13px; color: var(--text-primary); margin-top: 10px; line-height: 1.5;">
+                        "This certifies that <strong>Session #{{ fun_data.certificate.session_id }}</strong> successfully generated <strong>{{ fun_data.certificate.event_count }}</strong> acoustic events during <strong>{{ fun_data.certificate.duration_minutes }}</strong> minutes of monitoring."
+                    </p>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 14px; font-style: italic;">
+                        {{ fun_data.certificate.authority }}
+                    </div>
+                </div>
+
+                <!-- Screenshot Share Card -->
+                <div class="card" style="border: 1px solid var(--border-glow); background: var(--bg-dark); padding: 20px; box-shadow: 0 0 20px rgba(6,182,212,0.15);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                        <span class="brand-name" style="font-size: 18px; font-weight: 800;">SNORE<span class="highlight">SCAN</span></span>
+                        <span class="badge-useless">Session #{{ fun_data.share_card.session_id }}</span>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 13px; display: flex; flex-direction: column; gap: 6px;">
+                        <div>Personality: <strong class="text-violet">{{ fun_data.share_card.personality }}</strong></div>
+                        <div>Snore Power: <strong class="text-cyan">{{ fun_data.share_card.power }}/100</strong></div>
+                        <div>Events Detected: <strong class="text-amber">{{ fun_data.share_card.events }}</strong></div>
+                        <div>Snoring Duration %: <strong class="text-emerald">{{ fun_data.share_card.snoring_pct }}%</strong></div>
+                        <div>Roommate Survival: <strong>{{ fun_data.share_card.roommate_survival }}/100</strong></div>
+                        <div>Achievement: <strong class="text-amber">{{ fun_data.share_card.top_achievement }}</strong></div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+                <div class="card">
+                    <p>Session record not found.</p>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Chart.js Render & Interactive Details Script -->
+    <script>
+        const eventsData = {{ events | tojson if events else '[]' }};
+        const statsData = {{ stats | tojson if stats else '{}' }};
+        const spectrumData = {{ spectrum_chart | tojson if spectrum_chart else '{}' }};
+
+        function selectEventDetails(index) {
+            const container = document.getElementById('eventDetailsCard');
+            const selector = document.getElementById('eventSelector');
+            if (!container || !eventsData || eventsData.length === 0) return;
+
+            const idx = parseInt(index) || 0;
+            if (selector) selector.value = idx;
+            const e = eventsData[idx];
+
+            container.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 14px;">
+                    <div>
+                        <strong style="font-family: var(--font-heading); font-size: 20px; color: var(--accent-violet);">EVENT #${(e.event_number || (idx+1)).toString().padStart(2, '0')}</strong>
+                        <span style="color: var(--text-secondary); margin-left: 12px; font-size: 13px;">Start: ${e.start_time || 'N/A'} | End: ${e.end_time || 'N/A'}</span>
+                    </div>
+                    <span class="badge-snore" style="font-size: 14px;">Confidence: ${Math.round(e.confidence || 70)}%</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; font-size: 13.5px;">
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">DURATION</div>
+                        <div style="font-weight: 700; color: var(--accent-violet); font-size: 16px;">${(e.duration_seconds || 0).toFixed(2)} s</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">INTENSITY (dBFS)</div>
+                        <div style="font-weight: 700; color: var(--accent-amber); font-size: 16px;">${(e.intensity_db || -80).toFixed(1)} dBFS</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">DOMINANT FREQUENCY</div>
+                        <div style="font-weight: 700; color: var(--accent-emerald); font-size: 16px;">${Math.round(e.dominant_freq_hz || 0)} Hz</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">RMS ENERGY</div>
+                        <div style="font-weight: 600;">${(e.rms_energy || 0).toFixed(6)}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">PEAK AMPLITUDE</div>
+                        <div style="font-weight: 600;">${(e.peak_amplitude || 0).toFixed(4)}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">SPECTRAL CENTROID</div>
+                        <div style="font-weight: 600;">${Math.round(e.spectral_centroid || 0)} Hz</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">SPECTRAL BANDWIDTH</div>
+                        <div style="font-weight: 600;">${Math.round(e.spectral_bandwidth || 0)} Hz</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">SPECTRAL ROLLOFF (85%)</div>
+                        <div style="font-weight: 600;">${Math.round(e.spectral_rolloff || 0)} Hz</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">SPECTRAL FLATNESS</div>
+                        <div style="font-weight: 600;">${(e.spectral_flatness || 0).toFixed(4)}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">LOW / MID / HIGH ENERGY</div>
+                        <div style="font-weight: 600; color: var(--accent-cyan);">
+                            ${Math.round((e.low_frequency_energy || 0)*100)}% / ${Math.round((e.mid_frequency_energy || 0)*100)}% / ${Math.round((e.high_frequency_energy || 0)*100)}%
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            selectEventDetails(0);
+
+            if (!eventsData || eventsData.length === 0) return;
+
+            // 1. Frequency Spectrum FFT Chart
+            const spectrumCanvas = document.getElementById('spectrumChartCanvas');
+            const noSpectrumMsg = document.getElementById('noSpectrumMsg');
+            if (spectrumCanvas && spectrumData && spectrumData.frequencies && spectrumData.frequencies.length > 0) {
+                new Chart(spectrumCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: spectrumData.frequencies.map(f => `${f}Hz`),
+                        datasets: [{
+                            label: 'Spectral Magnitude',
+                            data: spectrumData.magnitudes,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.1)' } }
+                        }
+                    }
+                });
+            } else if (noSpectrumMsg) {
+                noSpectrumMsg.classList.remove('hidden');
+            }
+
+            // 2. Event Intensity (dBFS) Chart
+            const intensityCanvas = document.getElementById('intensityChartCanvas');
+            if (intensityCanvas) {
+                new Chart(intensityCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: eventsData.map((e, i) => `E#${e.event_number || (i+1)}`),
+                        datasets: [{
+                            label: 'Intensity (dBFS)',
+                            data: eventsData.map(e => e.intensity_db),
+                            backgroundColor: '#06b6d4',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' } },
+                            y: { ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+
+            // 3. Dominant Frequency (Hz) Chart
+            const freqCanvas = document.getElementById('freqChartCanvas');
+            if (freqCanvas) {
+                new Chart(freqCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: eventsData.map((e, i) => `E#${e.event_number || (i+1)}`),
+                        datasets: [{
+                            label: 'Frequency (Hz)',
+                            data: eventsData.map(e => e.dominant_freq_hz),
+                            borderColor: '#10b981',
+                            backgroundColor: '#10b981',
+                            pointRadius: 5,
+                            tension: 0.2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' } },
+                            y: { ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+
+            // 4. Event Duration Analysis Chart
+            const durationCanvas = document.getElementById('durationChartCanvas');
+            if (durationCanvas) {
+                new Chart(durationCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: eventsData.map((e, i) => `E#${e.event_number || (i+1)}`),
+                        datasets: [{
+                            label: 'Duration (s)',
+                            data: eventsData.map(e => e.duration_seconds),
+                            backgroundColor: '#8b5cf6',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#94a3b8' } },
+                            y: { ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+
+            // 5. Event Spacing Analysis Chart
+            const spacingCanvas = document.getElementById('spacingChartCanvas');
+            const spacingDetails = statsData.event_spacings_details || [];
+            if (spacingCanvas) {
+                if (spacingDetails.length > 0) {
+                    new Chart(spacingCanvas, {
+                        type: 'bar',
+                        data: {
+                            labels: spacingDetails.map(s => `E#${s.from_event}→${s.to_event}`),
+                            datasets: [{
+                                label: 'Spacing (s)',
+                                data: spacingDetails.map(s => s.spacing_sec),
+                                backgroundColor: '#f59e0b',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { ticks: { color: '#94a3b8' } },
+                                y: { ticks: { color: '#94a3b8' } }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // 6. Intensity vs Frequency Scatter Plot
+            const scatterCanvas = document.getElementById('scatterChartCanvas');
+            if (scatterCanvas) {
+                new Chart(scatterCanvas, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Event Intensity vs Freq',
+                            data: eventsData.map(e => ({
+                                x: e.dominant_freq_hz,
+                                y: e.intensity_db,
+                                evtNum: e.event_number,
+                                dur: e.duration_seconds
+                            })),
+                            backgroundColor: '#06b6d4',
+                            pointRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx) {
+                                        const r = ctx.raw;
+                                        return `Event #${r.evtNum}: ${r.x}Hz, ${r.y}dBFS (${r.dur}s)`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { title: { display: true, text: 'Frequency (Hz)', color: '#94a3b8' }, ticks: { color: '#94a3b8' } },
+                            y: { title: { display: true, text: 'Intensity (dBFS)', color: '#94a3b8' }, ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+
+            // 7. Initialize Snore Boss Battle
+            {% if boss_data %}
+            initBossBattle({{ boss_data|tojson }});
+            {% endif %}
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/day-night.js') }}"></script>
+</body>
+</html>
+

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Analysis - SNORESCAN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="navbar">
+            <div class="logo-group">
+                <div class="logo-icon"><i class="fa-solid fa-wave-square"></i></div>
+                <div class="logo-text">
+                    <span class="brand-name">SNORE<span class="highlight">SCAN</span></span>
+                    <span class="badge-useless">Hackathon Edition</span>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="/"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="/monitoring"><i class="fa-solid fa-microphone-lines"></i> Monitoring</a>
+                <a href="/analysis" class="active"><i class="fa-solid fa-chart-line"></i> Analysis</a>
+                <a href="/history"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+            </nav>
+        </header>
+
+        <div class="medical-disclaimer-alert">
+            <div class="disclaimer-icon"><i class="fa-solid fa-info-circle"></i></div>
+            <div class="disclaimer-text">
+                <strong>NON-DIAGNOSTIC ACOUSTIC ANALYSIS:</strong> Acoustic characteristics resemble patterns commonly observed in snoring. Frequencies and decibel waveforms are for spectral visualization only. This system does not diagnose sleep apnea or medical conditions.
+            </div>
+        </div>
+
+        <main class="page-content">
+            <div class="page-header">
+                <h2><i class="fa-solid fa-chart-pie text-cyan"></i> Frequency & Feature Analysis Dashboard</h2>
+                <p>Detailed breakdown of detected audio characteristics, time-domain features, and spectral FFT profiles.</p>
+            </div>
+
+            <div class="report-stats-grid" style="margin-bottom: 25px;">
+                <div class="card stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-wave-square"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Snore Rumble Band</span>
+                        <span class="stat-val text-violet">50 Hz - 300 Hz</span>
+                    </div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-sliders"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Nasal Harmonic Band</span>
+                        <span class="stat-val text-cyan">300 Hz - 1000 Hz</span>
+                    </div>
+                </div>
+                <div class="card stat-box">
+                    <div class="stat-icon"><i class="fa-solid fa-bolt"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Speech & Hiss Band</span>
+                        <span class="stat-val text-amber">1000 Hz - 4000 Hz</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="card">
+                    <h3><i class="fa-solid fa-wave-square text-violet"></i> Typical Snoring Spectrum vs Speech Spectrum</h3>
+                    <div style="height: 260px;">
+                        <canvas id="compSpectrumCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fa-solid fa-chart-area text-emerald"></i> Energy Distribution Across Frequency Bands</h3>
+                    <div style="height: 260px;">
+                        <canvas id="energyPieCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Sample Comparison Chart
+            const compCanvas = document.getElementById('compSpectrumCanvas');
+            new Chart(compCanvas, {
+                type: 'line',
+                data: {
+                    labels: ['50Hz', '100Hz', '150Hz', '200Hz', '300Hz', '500Hz', '1000Hz', '2000Hz', '4000Hz'],
+                    datasets: [
+                        {
+                            label: 'Snore Pattern (Low Frequency Peak)',
+                            data: [0.2, 0.85, 0.95, 0.70, 0.30, 0.10, 0.05, 0.02, 0.01],
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Speech / Ambient Noise',
+                            data: [0.05, 0.10, 0.15, 0.25, 0.60, 0.80, 0.75, 0.40, 0.20],
+                            borderColor: '#06b6d4',
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.1)' } }
+                    }
+                }
+            });
+
+            // Band Energy Pie Chart
+            const pieCanvas = document.getElementById('energyPieCanvas');
+            new Chart(pieCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low Band (50-300Hz)', 'Mid Band (300-1000Hz)', 'High Band (1000-4000Hz)'],
+                    datasets: [{
+                        data: [65, 25, 10],
+                        backgroundColor: ['#8b5cf6', '#06b6d4', '#f59e0b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8' } } }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

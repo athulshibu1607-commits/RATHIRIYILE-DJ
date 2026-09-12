@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNORESCAN - System Status & Health Check</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navbar -->
+        <header class="navbar">
+            <div class="logo-group">
+                <div class="logo-icon"><i class="fa-solid fa-wave-square"></i></div>
+                <div class="logo-text">
+                    <span class="brand-name">SNORE<span class="highlight">SCAN</span></span>
+                    <span class="badge-useless">Hackathon Edition</span>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="/"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="/monitoring"><i class="fa-solid fa-microphone-lines"></i> Monitoring</a>
+                <a href="/analysis"><i class="fa-solid fa-chart-line"></i> Analysis</a>
+                <a href="/history"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+                <a href="/compare"><i class="fa-solid fa-code-compare"></i> Compare</a>
+                <a href="/status" class="active"><i class="fa-solid fa-heart-pulse"></i> Status</a>
+                <a href="/demo" class="badge-demo-nav"><i class="fa-solid fa-wand-magic-sparkles"></i> Demo Mode</a>
+            </nav>
+        </header>
+
+        <!-- Page Content -->
+        <main class="page-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <div>
+                    <h1 style="font-family: var(--font-heading); font-size: 28px; font-weight: 800; color: #fff; margin: 0;">
+                        SYSTEM STATUS <span class="highlight">& HEALTH CHECK</span>
+                    </h1>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 4px;">
+                        Real-time hardware, signal processing, and database component verification
+                    </p>
+                </div>
+                <button class="btn btn-secondary" onclick="loadSystemStatus()"><i class="fa-solid fa-arrows-rotate"></i> Refresh Status</button>
+            </div>
+
+            <!-- Health Check Status Grid -->
+            <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;" id="statusGrid">
+                <div class="feature-card">
+                    <div class="card-icon icon-cyan" id="micIcon"><i class="fa-solid fa-microphone"></i></div>
+                    <h3 id="micTitle">Microphone System</h3>
+                    <p id="micDesc">Verifying hardware audio device connection...</p>
+                </div>
+                <div class="feature-card">
+                    <div class="card-icon icon-violet"><i class="fa-solid fa-wave-square"></i></div>
+                    <h3>Audio Analyzer</h3>
+                    <p>🟢 Active — PCM buffer windowing & FFT spectral extraction ready.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="card-icon icon-emerald"><i class="fa-solid fa-filter"></i></div>
+                    <h3>Snore Detector</h3>
+                    <p>🟢 Active — Signal-Processing rule-based detection engine ready.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="card-icon icon-amber"><i class="fa-solid fa-database"></i></div>
+                    <h3>SQLite Database</h3>
+                    <p>🟢 Connected — `snorescan.db` schema & Foreign Keys active.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="card-icon icon-cyan"><i class="fa-solid fa-brain"></i></div>
+                    <h3>Pattern Analyzer</h3>
+                    <p>🟢 Active — Multi-event pattern & gap clustering engine operational.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="card-icon icon-rose"><i class="fa-solid fa-face-laugh-beam"></i></div>
+                    <h3>Fun Analyzer</h3>
+                    <p>🟢 Active — 100% deterministic hackathon intelligence ready.</p>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>SNORESCAN &copy; 2026 - Useless Hackathon Project. Non-medical entertainment application.</p>
+        </footer>
+    </div>
+
+    <script>
+        async function loadSystemStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const micP = document.getElementById('micDesc');
+                    if (micP) micP.innerText = data.components.microphone_system;
+                }
+            } catch(e) {
+                console.error("Status fetch error:", e);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadSystemStatus);
+    </script>
+</body>
+</html>

@@ -55,6 +55,33 @@ async function startMonitoringSession() {
             isMonitoringActive = true;
             window.snoreRecorder.startCapture(activeSessionId);
 
+            // Reset timer, metrics, and state for the new session
+            const timerElem = document.getElementById('dashTimer');
+            if (timerElem) timerElem.innerText = '00:00:00';
+            latestIntensityHistory = [];
+            detectedEventsList = [];
+
+            const eventCountElem = document.getElementById('dashEventCount');
+            if (eventCountElem) eventCountElem.innerText = '0';
+            const snorePctElem = document.getElementById('dashSnorePct');
+            if (snorePctElem) snorePctElem.innerText = '0.0%';
+            const snoreDurationElem = document.getElementById('dashSnoreDuration');
+            if (snoreDurationElem) snoreDurationElem.innerText = '0.0 s snoring time';
+            const bossPowerCard = document.getElementById('dashBossPowerCard');
+            if (bossPowerCard) bossPowerCard.innerText = '0';
+            const bossPowerHUD = document.getElementById('bossPowerHUD');
+            if (bossPowerHUD) bossPowerHUD.innerText = '0 PTS';
+            const currentDbElem = document.getElementById('dashCurrentDb');
+            if (currentDbElem) currentDbElem.innerText = 'Live: -80.0 dBFS';
+            const latestFreqElem = document.getElementById('dashLatestFreq');
+            if (latestFreqElem) latestFreqElem.innerText = '0 Hz';
+            const minMaxFreqElem = document.getElementById('dashMinMaxFreq');
+            if (minMaxFreqElem) minMaxFreqElem.innerText = 'Range: 0 - 0 Hz';
+            const snoreRateElem = document.getElementById('dashSnoreRate');
+            if (snoreRateElem) snoreRateElem.innerText = '0.0 events/min';
+            const eventCountBadge = document.getElementById('eventCountBadge');
+            if (eventCountBadge) eventCountBadge.innerText = '0 events recorded';
+
             const grid = document.getElementById('liveDetectionsGrid');
             if (grid) {
                 grid.innerHTML = `

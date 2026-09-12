@@ -192,7 +192,12 @@ class AudioRecorderManager:
     def start_recording(self, session_id: int, capture_mode: str = 'server'):
         """Starts continuous microphone audio recording and snore detection."""
         if self.is_recording:
-            return True
+            logging.warning(f"[START] Already recording session #{self.active_session_id}. Force-stopping before starting session #{session_id}.")
+            try:
+                self.stop_recording(self.active_session_id or session_id)
+            except Exception as err:
+                logging.error(f"[START] Error force-stopping previous session: {err}")
+                self.is_recording = False
 
         if capture_mode == 'browser':
             self._reset_session_state(session_id)

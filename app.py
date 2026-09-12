@@ -289,8 +289,10 @@ def internal_error(error):
 @app.route('/api/monitoring/start', methods=['POST'])
 def api_start_monitoring():
     """API endpoint to initiate continuous microphone capture for a new session."""
+    data = request.get_json(silent=True) or {}
+    capture_mode = data.get('capture_mode', 'server')
     session_id = create_session()
-    started = recorder_manager.start_recording(session_id)
+    started = recorder_manager.start_recording(session_id, capture_mode=capture_mode)
     
     if not started:
         return jsonify({
@@ -305,6 +307,19 @@ def api_start_monitoring():
         'device_name': recorder_manager.selected_device_name,
         'message': f'Microphone capture started for Session #{session_id}.'
     })
+
+
+@app.route('/api/monitoring/audio', methods=['POST'])
+def api_monitoring_audio():
+    """Accepts a small PCM chunk captured by the user's browser microphone."""
+    data = request.get_json(silent=True) or {}
+    if data.get('session_id') != recorder_manager.active_session_id:
+        return jsonify({'status': 'error', 'message': 'Monitoring session is not active.'}), 409
+
+    if not recorder_manager.process_browser_chunk(data.get('samples', [])):
+        return jsonify({'status': 'error', 'message': 'Audio chunk was rejected.'}), 400
+
+    return jsonify({'status': 'success'})
 
 
 @app.route('/api/monitoring/status', methods=['GET'])

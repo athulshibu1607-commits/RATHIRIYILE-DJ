@@ -37,16 +37,23 @@ async function startMonitoringSession() {
     }
 
     try {
+        const permissionGranted = await window.snoreRecorder.requestMicPermission();
+        if (!permissionGranted) {
+            throw new Error('Microphone permission was denied or is unavailable. Allow microphone access and try again.');
+        }
+
         updateDashboardStatus('STARTING...', false);
         const response = await fetch('/api/monitoring/start', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ capture_mode: 'browser' })
         });
         const data = await response.json();
 
         if (data.status === 'success') {
             activeSessionId = data.session_id;
             isMonitoringActive = true;
+            window.snoreRecorder.startCapture(activeSessionId);
 
             const grid = document.getElementById('liveDetectionsGrid');
             if (grid) {
@@ -69,7 +76,8 @@ async function startMonitoringSession() {
 
     } catch (err) {
         console.error("Failed to start session:", err);
-        showMicError("🎙️ SNORESCAN couldn't access your microphone. Please check your microphone permissions and try again.");
+        if (window.snoreRecorder) await window.snoreRecorder.stopMicStream();
+        showMicError(`🎙️ SNORESCAN couldn't access your microphone. ${err.message || 'Please check your microphone permissions and try again.'}`);
         updateDashboardStatus('READY', false);
     }
 }
@@ -95,6 +103,7 @@ async function stopMonitoringSession() {
     updateDashboardStatus('STOPPING...', false);
 
     try {
+        if (window.snoreRecorder) await window.snoreRecorder.stopMicStream();
         const response = await fetch('/api/monitoring/stop', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

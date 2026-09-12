@@ -170,14 +170,7 @@ class AudioRecorderManager:
                     f"Freq: {features['dominant_freq']:.0f}Hz | Snores: {len(self.detected_events)}{snore_str}"
                 )
 
-    def start_recording(self, session_id: int):
-        """Starts continuous microphone audio recording and snore detection."""
-        if self.is_recording:
-            return True
-
-        if not self.inspect_microphone_devices():
-            return False
-
+    def _reset_session_state(self, session_id: int):
         with self.lock:
             self.active_session_id = session_id
             self.recorded_chunks = []
@@ -189,13 +182,30 @@ class AudioRecorderManager:
             self.chunks_processed = 0
             self.start_timestamp = time.time()
             self.stream_error = None
-
-            # Reset detector & event state
             self.snore_detector.reset()
             self.detected_events = []
             self.events_timeline = []
             self.latest_event = None
             self.is_snore_active = False
+
+    def start_recording(self, session_id: int, capture_mode: str = 'server'):
+        """Starts continuous microphone audio recording and snore detection."""
+        if self.is_recording:
+            return True
+
+        if capture_mode == 'browser':
+            self._reset_session_state(session_id)
+            self.mic_connected = True
+            self.selected_device_name = 'Browser microphone'
+            self.selected_device_index = None
+            self.is_recording = True
+            logging.info(f"=== BROWSER MIC RECORDING STARTED FOR SESSION #{session_id} ===")
+            return True
+
+        if not self.inspect_microphone_devices():
+            return False
+
+        self._reset_session_state(session_id)
 
         try:
             self.stream = sd.InputStream(
@@ -216,6 +226,18 @@ class AudioRecorderManager:
             self.is_recording = False
             logging.error(f"[STREAM ERROR] {err}")
             return False
+
+    def process_browser_chunk(self, audio_data):
+        """Processes PCM supplied by the browser microphone capture path."""
+        if not self.is_recording:
+            return False
+
+        chunk = np.asarray(audio_data, dtype=np.float32).flatten()
+        if chunk.size == 0 or chunk.size > self.sample_rate:
+            return False
+
+        self._audio_callback(chunk, len(chunk), None, 0)
+        return True
 
     def stop_recording(self, session_id: int):
         """Stops microphone stream, flushes WAV file, finalizes snore events, and computes report metrics."""

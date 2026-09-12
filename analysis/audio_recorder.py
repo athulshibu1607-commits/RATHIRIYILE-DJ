@@ -3,6 +3,7 @@ import time
 import logging
 import threading
 import math
+from datetime import datetime
 import numpy as np
 
 try:
@@ -369,6 +370,7 @@ class AudioRecorderManager:
             'status': 'active' if self.is_recording else 'stopped',
             'monitoring': bool(self.is_recording),
             'session_id': self.active_session_id,
+            'start_time_str': datetime.fromtimestamp(self.start_timestamp).strftime('%H:%M:%S') if self.start_timestamp else '',
             'mic_connected': self.mic_connected,
             'device_name': self.selected_device_name,
             'device_index': self.selected_device_index,

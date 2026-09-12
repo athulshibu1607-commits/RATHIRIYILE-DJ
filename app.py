@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from flask import Flask, render_template, jsonify, request, redirect, url_for
 from database import (
     init_db,
@@ -305,6 +306,7 @@ def api_start_monitoring():
         'status': 'success',
         'session_id': session_id,
         'device_name': recorder_manager.selected_device_name,
+        'start_time_str': datetime.fromtimestamp(recorder_manager.start_timestamp).strftime('%H:%M:%S') if recorder_manager.start_timestamp else '',
         'message': f'Microphone capture started for Session #{session_id}.'
     })
 

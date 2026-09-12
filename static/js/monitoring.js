@@ -100,10 +100,20 @@ async function stopMonitoringSession() {
         return;
     }
 
+    // Stop polling FIRST to prevent race conditions where a poll response
+    // overwrites the UI state during the stop flow
+    stopStatusPolling();
+
     updateDashboardStatus('STOPPING...', false);
 
+    // Stop browser mic stream separately — don't let this block the stop API call
     try {
         if (window.snoreRecorder) await window.snoreRecorder.stopMicStream();
+    } catch (micErr) {
+        console.warn("Error stopping mic stream (continuing with stop):", micErr);
+    }
+
+    try {
         const response = await fetch('/api/monitoring/stop', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -116,7 +126,6 @@ async function stopMonitoringSession() {
             activeSessionId = null;
             isMonitoringActive = false;
 
-            stopStatusPolling();
             stopCanvasAnimations();
             updateDashboardStatus('COMPLETED', false, finishedSessionId);
 
@@ -127,12 +136,19 @@ async function stopMonitoringSession() {
                 window.location.href = `/report/${finishedSessionId}`;
             }, 600);
         } else {
-
             console.error("Error stopping session:", data.message);
+            // Reset state so user can retry or start fresh
+            activeSessionId = null;
+            isMonitoringActive = false;
+            stopCanvasAnimations();
             updateDashboardStatus('READY', false);
         }
     } catch (err) {
         console.error("Failed to stop session:", err);
+        // Reset state so user can retry or start fresh
+        activeSessionId = null;
+        isMonitoringActive = false;
+        stopCanvasAnimations();
         updateDashboardStatus('READY', false);
     }
 }
@@ -198,6 +214,7 @@ function stopStatusPolling() {
 
 async function fetchLiveStatus() {
     if (window.IS_DEMO_MODE) return;
+    if (!isMonitoringActive) return;
     try {
         const response = await fetch('/api/monitoring/status');
         const data = await response.json();

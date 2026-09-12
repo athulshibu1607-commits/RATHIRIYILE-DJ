@@ -58,19 +58,42 @@ class SnoreRecorder {
 
     async stopMicStream() {
         this.isRecording = false;
-        await this.pendingUploads;
-        if (this.processor) {
-            this.processor.disconnect();
+        // Disconnect processor first to stop queuing new uploads
+        try {
+            if (this.processor) {
+                this.processor.onaudioprocess = null;
+                this.processor.disconnect();
+                this.processor = null;
+            }
+        } catch (e) {
+            console.warn('Error disconnecting processor:', e);
             this.processor = null;
         }
-        if (this.audioContext) {
-            await this.audioContext.close();
-            this.audioContext = null;
+        // Wait for any in-flight uploads to finish
+        try {
+            await this.pendingUploads;
+        } catch (e) {
+            console.warn('Error awaiting pending uploads:', e);
         }
-        if (this.mediaStream) {
-            this.mediaStream.getTracks().forEach(track => track.stop());
-            this.mediaStream = null;
+        this.pendingUploads = Promise.resolve();
+        // Close audio context
+        try {
+            if (this.audioContext && this.audioContext.state !== 'closed') {
+                await this.audioContext.close();
+            }
+        } catch (e) {
+            console.warn('Error closing audio context:', e);
         }
+        this.audioContext = null;
+        // Stop media stream tracks
+        try {
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach(track => track.stop());
+            }
+        } catch (e) {
+            console.warn('Error stopping media stream:', e);
+        }
+        this.mediaStream = null;
         this.sessionId = null;
     }
 }
